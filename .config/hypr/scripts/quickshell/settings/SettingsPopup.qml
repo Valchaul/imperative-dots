@@ -2422,12 +2422,102 @@ Item {
                             }
                         }
                     }
+
+                    // ── Box 4: Cache duration ─────────────────────────────────
+                    Rectangle {
+                        id: wBox4
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: cacheRow.implicitHeight + root.s(28)
+                        radius: root.s(12)
+
+                        property bool isActive: root.highlightedBox === 4
+                        color: isActive ? root.teal : root.surface0
+                        border.color: isActive ? root.teal : root.surface1
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+
+                        MouseArea { anchors.fill: parent; onClicked: root.highlightedBox = 4; z: -1 }
+
+                        RowLayout {
+                            id: cacheRow
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.margins: root.s(16)
+                            spacing: root.s(14)
+                            Item {
+                                Layout.preferredWidth: root.s(22)
+                                Layout.alignment: Qt.AlignVCenter
+                                Text {
+                                    anchors.centerIn: parent; text: "󰄉"
+                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                    color: wBox4.isActive ? root.base : root.teal
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: root.s(3)
+                                Text {
+                                    text: "Cache duration"; font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(14)
+                                    color: wBox4.isActive ? root.base : root.text; Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Text {
+                                    text: "How often to refetch from OpenWeatherMap"; font.family: "Inter"; font.pixelSize: root.s(11)
+                                    color: wBox4.isActive ? Qt.alpha(root.base, 0.75) : Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            RowLayout {
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight; spacing: root.s(10)
+                                Rectangle {
+                                    width: root.s(28); height: root.s(28); radius: root.s(6)
+                                    color: cacheMinusMa.pressed
+                                        ? Qt.alpha(root.base, 0.3)
+                                        : (cacheMinusMa.containsMouse ? Qt.alpha(root.base, 0.2) : Qt.alpha(root.base, 0.15))
+                                    scale: cacheMinusMa.pressed ? 0.90 : (cacheMinusMa.containsMouse ? 1.08 : 1.0)
+                                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuart } }
+                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                    Text {
+                                        anchors.centerIn: parent; text: "-"
+                                        font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(15)
+                                        color: wBox4.isActive ? root.base : root.teal
+                                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                    }
+                                    MouseArea { id: cacheMinusMa; anchors.fill: parent; hoverEnabled: true; onClicked: Config.weatherCacheMinutes = Math.max(5, Config.weatherCacheMinutes - 5) }
+                                }
+                                Text {
+                                    text: Config.weatherCacheMinutes + "m"
+                                    font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: root.s(14)
+                                    color: wBox4.isActive ? root.base : root.teal
+                                    Layout.minimumWidth: root.s(36); horizontalAlignment: Text.AlignHCenter
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Rectangle {
+                                    width: root.s(28); height: root.s(28); radius: root.s(6)
+                                    color: cachePlusMa.pressed
+                                        ? Qt.alpha(root.base, 0.3)
+                                        : (cachePlusMa.containsMouse ? Qt.alpha(root.base, 0.2) : Qt.alpha(root.base, 0.15))
+                                    scale: cachePlusMa.pressed ? 0.90 : (cachePlusMa.containsMouse ? 1.08 : 1.0)
+                                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuart } }
+                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                    Text {
+                                        anchors.centerIn: parent; text: "+"
+                                        font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(15)
+                                        color: wBox4.isActive ? root.base : root.teal
+                                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                    }
+                                    MouseArea { id: cachePlusMa; anchors.fill: parent; hoverEnabled: true; onClicked: Config.weatherCacheMinutes = Math.min(120, Config.weatherCacheMinutes + 5) }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    
+
     Component {
         id: keybindTabComponent
         Item {

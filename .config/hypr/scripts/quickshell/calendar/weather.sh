@@ -249,7 +249,7 @@ if [[ "$1" == "--getdata" ]]; then
     get_data
 
 elif [[ "$1" == "--json" ]]; then
-    CACHE_LIMIT=900         # 15 minutes for valid working data
+    CACHE_LIMIT=$(( ${WEATHER_CACHE_MINUTES:-30} * 60 )) # Configurable via Settings > Weather (default 30 min)
     PENDING_RETRY_LIMIT=3600 # 1 hour for invalid/activating keys
 
     if [ -f "$json_file" ]; then

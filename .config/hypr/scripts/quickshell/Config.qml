@@ -93,6 +93,7 @@ Item {
     property string weatherUnit: "metric"
     property string weatherApiKey: ""
     property string weatherCityId: ""
+    property int weatherCacheMinutes: 30
 
     property bool tempPillEnabled: true
     property int statsRefreshSeconds: 2
@@ -132,7 +133,8 @@ Item {
         let envs = {
             "OPENWEATHER_KEY": config.weatherApiKey,
             "OPENWEATHER_CITY_ID": config.weatherCityId,
-            "OPENWEATHER_UNIT": config.weatherUnit
+            "OPENWEATHER_UNIT": config.weatherUnit,
+            "WEATHER_CACHE_MINUTES": config.weatherCacheMinutes
         };
         
         config.updateEnvBulk(config.weatherEnvPath, envs);
@@ -356,6 +358,7 @@ Item {
                         if (key === "OPENWEATHER_KEY") config.weatherApiKey = val;
                         else if (key === "OPENWEATHER_CITY_ID") config.weatherCityId = val;
                         else if (key === "OPENWEATHER_UNIT") config.weatherUnit = val;
+                        else if (key === "WEATHER_CACHE_MINUTES") config.weatherCacheMinutes = parseInt(val) || 30;
                     }
                 }
             }
