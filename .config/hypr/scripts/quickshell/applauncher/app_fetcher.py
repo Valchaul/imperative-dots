@@ -6,7 +6,8 @@ import json
 def fetch_apps():
     apps = {}
     home = os.path.expanduser('~')
-    
+    default_icon = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'application-x-executable.svg')
+
     # Expanded directories to catch Flatpaks, system apps, and Nix packages
     dirs = [
         '/usr/share/applications',
@@ -25,25 +26,27 @@ def fetch_apps():
         for f in glob.glob(os.path.join(d, '**/*.desktop'), recursive=True):
             try:
                 with open(f, 'r', encoding='utf-8') as file:
-                    app = {'name': '', 'exec': '', 'icon': ''}
+                    app = {'name': '', 'exec': '', 'icon': default_icon}
                     is_desktop = False
                     no_display = False
-                    
+                    icon_set = False
+
                     for line in file:
                         line = line.strip()
                         if line == '[Desktop Entry]':
                             is_desktop = True
                         elif line.startswith('['):
                             is_desktop = False
-                            
+
                         if is_desktop:
                             if line.startswith('Name=') and not app['name']:
                                 app['name'] = line[5:]
                             elif line.startswith('Exec=') and not app['exec']:
                                 # Strip %u, %f, and @@ placeholders
                                 app['exec'] = line[5:].split(' %')[0].split(' @@')[0]
-                            elif line.startswith('Icon=') and not app['icon']:
+                            elif line.startswith('Icon=') and not icon_set:
                                 app['icon'] = line[5:]
+                                icon_set = True
                             elif line.startswith('NoDisplay=true') or line.startswith('NoDisplay=1'):
                                 no_display = True
                                 
