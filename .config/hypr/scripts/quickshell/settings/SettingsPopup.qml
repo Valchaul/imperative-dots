@@ -1845,8 +1845,166 @@ Item {
                             }
                         }
                     }
+
+                    // ── Box 7: Temperature pill ──────────────────────────────
+                    Rectangle {
+                        id: box7
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: tempPillRow.implicitHeight + root.s(28)
+                        radius: root.s(12)
+
+                        property bool isActive: root.highlightedBox === 7
+                        color: isActive ? root.yellow : root.surface0
+                        border.color: isActive ? root.yellow : root.surface1
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+
+                        MouseArea { anchors.fill: parent; onClicked: root.highlightedBox = 7; z: -1 }
+
+                        RowLayout {
+                            id: tempPillRow
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.margins: root.s(16)
+                            spacing: root.s(14)
+                            Item {
+                                Layout.preferredWidth: root.s(22)
+                                Layout.alignment: Qt.AlignVCenter
+                                Text {
+                                    anchors.centerIn: parent; text: ""
+                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                    color: box7.isActive ? root.base : root.yellow
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: root.s(3)
+                                Text {
+                                    text: "Temperature pill"; font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(14)
+                                    color: box7.isActive ? root.base : root.text; Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Text {
+                                    text: "Show CPU temp in topbar"; font.family: "Inter"; font.pixelSize: root.s(11)
+                                    color: box7.isActive ? Qt.alpha(root.base, 0.75) : Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Layout.preferredWidth: root.s(40); Layout.preferredHeight: root.s(22); radius: root.s(11)
+                                scale: toggle7Ma.containsMouse ? 1.05 : 1.0
+                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                color: Config.tempPillEnabled
+                                    ? (box7.isActive ? root.base : root.yellow)
+                                    : Qt.alpha(root.surface2, box7.isActive ? 0.4 : 1.0)
+                                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                Rectangle {
+                                    width: root.s(16); height: root.s(16); radius: root.s(8)
+                                    color: Config.tempPillEnabled
+                                        ? (box7.isActive ? root.yellow : root.base)
+                                        : (box7.isActive ? root.yellow : root.surface0)
+                                    y: root.s(3); x: Config.tempPillEnabled ? root.s(21) : root.s(3)
+                                    Behavior on x { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                MouseArea { id: toggle7Ma; anchors.fill: parent; hoverEnabled: true; onClicked: Config.tempPillEnabled = !Config.tempPillEnabled; cursorShape: Qt.PointingHandCursor }
+                            }
+                        }
+                    }
+
+                    // ── Box 8: Stats refresh frequency ───────────────────────
+                    Rectangle {
+                        id: box8
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: statsFreqRow.implicitHeight + root.s(28)
+                        radius: root.s(12)
+
+                        property bool isActive: root.highlightedBox === 8
+                        color: isActive ? root.pink : root.surface0
+                        border.color: isActive ? root.pink : root.surface1
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+
+                        MouseArea { anchors.fill: parent; onClicked: root.highlightedBox = 8; z: -1 }
+
+                        RowLayout {
+                            id: statsFreqRow
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.margins: root.s(16)
+                            spacing: root.s(14)
+                            Item {
+                                Layout.preferredWidth: root.s(22)
+                                Layout.alignment: Qt.AlignVCenter
+                                Text {
+                                    anchors.centerIn: parent; text: "󰄉"
+                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                    color: box8.isActive ? root.base : root.pink
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: root.s(3)
+                                Text {
+                                    text: "Stats refresh rate"; font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(14)
+                                    color: box8.isActive ? root.base : root.text; Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Text {
+                                    text: "CPU/RAM/temp/disk polling interval"; font.family: "Inter"; font.pixelSize: root.s(11)
+                                    color: box8.isActive ? Qt.alpha(root.base, 0.75) : Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            RowLayout {
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight; spacing: root.s(10)
+                                Rectangle {
+                                    width: root.s(28); height: root.s(28); radius: root.s(6)
+                                    color: freqMinusMa.pressed
+                                        ? Qt.alpha(root.base, 0.3)
+                                        : (freqMinusMa.containsMouse ? Qt.alpha(root.base, 0.2) : Qt.alpha(root.base, 0.15))
+                                    scale: freqMinusMa.pressed ? 0.90 : (freqMinusMa.containsMouse ? 1.08 : 1.0)
+                                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuart } }
+                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                    Text {
+                                        anchors.centerIn: parent; text: "-"
+                                        font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(15)
+                                        color: box8.isActive ? root.base : root.pink
+                                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                    }
+                                    MouseArea { id: freqMinusMa; anchors.fill: parent; hoverEnabled: true; onClicked: Config.statsRefreshSeconds = Math.max(1, Config.statsRefreshSeconds - 1) }
+                                }
+                                Text {
+                                    text: Config.statsRefreshSeconds + "s"
+                                    font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: root.s(14)
+                                    color: box8.isActive ? root.base : root.pink
+                                    Layout.minimumWidth: root.s(36); horizontalAlignment: Text.AlignHCenter
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Rectangle {
+                                    width: root.s(28); height: root.s(28); radius: root.s(6)
+                                    color: freqPlusMa.pressed
+                                        ? Qt.alpha(root.base, 0.3)
+                                        : (freqPlusMa.containsMouse ? Qt.alpha(root.base, 0.2) : Qt.alpha(root.base, 0.15))
+                                    scale: freqPlusMa.pressed ? 0.90 : (freqPlusMa.containsMouse ? 1.08 : 1.0)
+                                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutQuart } }
+                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                    Text {
+                                        anchors.centerIn: parent; text: "+"
+                                        font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(15)
+                                        color: box8.isActive ? root.base : root.pink
+                                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                    }
+                                    MouseArea { id: freqPlusMa; anchors.fill: parent; hoverEnabled: true; onClicked: Config.statsRefreshSeconds = Math.min(30, Config.statsRefreshSeconds + 1) }
+                                }
+                            }
+                        }
+                    }
                 }
-            }        
+            }
         }
     }
 

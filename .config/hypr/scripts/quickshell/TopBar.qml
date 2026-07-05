@@ -1425,8 +1425,9 @@ Variants {
                                     }
                                 }
 
-                                property real targetWidth: tempLayoutRow.implicitWidth + barWindow.s(24)
+                                property real targetWidth: Config.tempPillEnabled ? (tempLayoutRow.implicitWidth + barWindow.s(24)) : 0
                                 width: targetWidth
+                                visible: targetWidth > 0
                                 Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutQuint } }
 
                                 scale: isHovered ? 1.05 : 1.0

@@ -94,6 +94,9 @@ Item {
     property string weatherApiKey: ""
     property string weatherCityId: ""
 
+    property bool tempPillEnabled: true
+    property int statsRefreshSeconds: 2
+
     property var keybindsData: []
     signal keybindsLoaded()
 
@@ -111,7 +114,9 @@ Item {
             "wallpaperDir": config.wallpaperDir,
             "language": config.language,
             "kbOptions": config.kbOptions,
-            "workspaceCount": config.workspaceCount
+            "workspaceCount": config.workspaceCount,
+            "tempPillEnabled": config.tempPillEnabled,
+            "statsRefreshSeconds": config.statsRefreshSeconds
         };
 
         config.updateJsonBulk(configObj);
@@ -376,8 +381,10 @@ Item {
                         if (config.rawSettings.kbOptions !== undefined) config.kbOptions = config.rawSettings.kbOptions;
                         if (config.rawSettings.workspaceCount !== undefined) {
                             config.workspaceCount = config.rawSettings.workspaceCount;
-                            config.initialWorkspaceCount = config.rawSettings.workspaceCount; 
+                            config.initialWorkspaceCount = config.rawSettings.workspaceCount;
                         }
+                        if (config.rawSettings.tempPillEnabled !== undefined) config.tempPillEnabled = config.rawSettings.tempPillEnabled;
+                        if (config.rawSettings.statsRefreshSeconds !== undefined) config.statsRefreshSeconds = config.rawSettings.statsRefreshSeconds;
                         
                         // Map Keybinds
                         if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {

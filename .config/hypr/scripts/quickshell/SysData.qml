@@ -37,7 +37,7 @@ Item {
 
     Timer {
         id: fetchTimer
-        interval: 2000
+        interval: Config.statsRefreshSeconds * 1000
         repeat: true
         running: false
         onTriggered: {
