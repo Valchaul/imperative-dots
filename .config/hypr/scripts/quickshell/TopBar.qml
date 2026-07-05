@@ -1457,7 +1457,7 @@ Variants {
                                         color: tempPill.isHot ? mocha.base : mocha.text
                                     }
                                 }
-                                MouseArea { id: tempMouse; hoverEnabled: true; anchors.fill: parent }
+                                MouseArea { id: tempMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle stats"]) }
                             }
 
                             Rectangle {
