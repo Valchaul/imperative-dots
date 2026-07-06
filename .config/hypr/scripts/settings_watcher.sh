@@ -34,6 +34,13 @@ compile_settings() {
     LANG=$(jq -r '.language // "us"' "$SETTINGS_FILE")
     KB_OPT=$(jq -r '.kbOptions // "grp:alt_shift_toggle"' "$SETTINGS_FILE")
     WP_DIR=$(jq -r '.wallpaperDir // empty' "$SETTINGS_FILE")
+    SENSITIVITY=$(jq -r '.mouseSensitivity // 0' "$SETTINGS_FILE")
+    BORDER_SIZE=$(jq -r '.borderSize // 2' "$SETTINGS_FILE")
+    WINDOW_GAPS=$(jq -r '.windowGaps // 4' "$SETTINGS_FILE")
+    WINDOW_ROUNDING=$(jq -r '.windowRounding // 4' "$SETTINGS_FILE")
+    BLUR_ENABLED=$(jq -r 'if (if has("blurEnabled") then .blurEnabled else true end) then "true" else "false" end' "$SETTINGS_FILE")
+    ANIMATIONS_ENABLED=$(jq -r 'if (if has("animationsEnabled") then .animationsEnabled else true end) then "yes" else "no" end' "$SETTINGS_FILE")
+    NATURAL_SCROLL=$(jq -r 'if (if has("naturalScrollEnabled") then .naturalScrollEnabled else true end) then "true" else "false" end' "$SETTINGS_FILE")
 
     # Safely parse booleans so "false" doesn't trigger a fallback
     GUIDE_STARTUP=$(jq -r 'if has("openGuideAtStartup") then .openGuideAtStartup else true end' "$SETTINGS_FILE")
@@ -71,6 +78,13 @@ compile_settings() {
     echo "Regenerating settings.conf..."
     sed -e "s|{{KB_LAYOUT}}|$LANG|g" \
         -e "s|{{KB_OPTIONS}}|$KB_OPT|g" \
+        -e "s|{{SENSITIVITY}}|$SENSITIVITY|g" \
+        -e "s|{{BORDER_SIZE}}|$BORDER_SIZE|g" \
+        -e "s|{{WINDOW_GAPS}}|$WINDOW_GAPS|g" \
+        -e "s|{{WINDOW_ROUNDING}}|$WINDOW_ROUNDING|g" \
+        -e "s|{{BLUR_ENABLED}}|$BLUR_ENABLED|g" \
+        -e "s|{{ANIMATIONS_ENABLED}}|$ANIMATIONS_ENABLED|g" \
+        -e "s|{{NATURAL_SCROLL}}|$NATURAL_SCROLL|g" \
         "$TMPL_DIR/settings.conf.template" > "$SETTINGS_CONF"
 
     # 3. Regenerate autostart.conf

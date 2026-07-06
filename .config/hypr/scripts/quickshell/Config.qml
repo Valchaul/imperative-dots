@@ -89,6 +89,14 @@ Item {
     property string wallpaperDir: Quickshell.env("WALLPAPER_DIR") || (homeDir + "/Pictures/Wallpapers")
     property string language: ""
     property string kbOptions: "grp:alt_shift_toggle"
+    // Hyprland's input.sensitivity — applies to mouse and touchpad pointer accel, -1.0 to 1.0
+    property real mouseSensitivity: 0.0
+    property int borderSize: 2
+    property int windowGaps: 4
+    property int windowRounding: 4
+    property bool blurEnabled: true
+    property bool animationsEnabled: true
+    property bool naturalScrollEnabled: true
 
     property string weatherUnit: "metric"
     property string weatherApiKey: ""
@@ -120,6 +128,13 @@ Item {
             "wallpaperDir": config.wallpaperDir,
             "language": config.language,
             "kbOptions": config.kbOptions,
+            "mouseSensitivity": config.mouseSensitivity,
+            "borderSize": config.borderSize,
+            "windowGaps": config.windowGaps,
+            "windowRounding": config.windowRounding,
+            "blurEnabled": config.blurEnabled,
+            "animationsEnabled": config.animationsEnabled,
+            "naturalScrollEnabled": config.naturalScrollEnabled,
             "workspaceCount": config.workspaceCount,
             "tempPillEnabled": config.tempPillEnabled,
             "statsRefreshSeconds": config.statsRefreshSeconds,
@@ -392,6 +407,13 @@ Item {
                         if (config.rawSettings.wallpaperDir !== undefined) config.wallpaperDir = config.rawSettings.wallpaperDir;
                         if (config.rawSettings.language !== undefined && config.rawSettings.language !== "") config.language = config.rawSettings.language;
                         if (config.rawSettings.kbOptions !== undefined) config.kbOptions = config.rawSettings.kbOptions;
+                        if (config.rawSettings.mouseSensitivity !== undefined) config.mouseSensitivity = config.rawSettings.mouseSensitivity;
+                        if (config.rawSettings.borderSize !== undefined) config.borderSize = config.rawSettings.borderSize;
+                        if (config.rawSettings.windowGaps !== undefined) config.windowGaps = config.rawSettings.windowGaps;
+                        if (config.rawSettings.windowRounding !== undefined) config.windowRounding = config.rawSettings.windowRounding;
+                        if (config.rawSettings.blurEnabled !== undefined) config.blurEnabled = config.rawSettings.blurEnabled;
+                        if (config.rawSettings.animationsEnabled !== undefined) config.animationsEnabled = config.rawSettings.animationsEnabled;
+                        if (config.rawSettings.naturalScrollEnabled !== undefined) config.naturalScrollEnabled = config.rawSettings.naturalScrollEnabled;
                         if (config.rawSettings.workspaceCount !== undefined) {
                             config.workspaceCount = config.rawSettings.workspaceCount;
                             config.initialWorkspaceCount = config.rawSettings.workspaceCount;
