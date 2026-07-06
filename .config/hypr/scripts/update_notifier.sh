@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source "$(dirname "${BASH_SOURCE[0]}")/caching.sh"
+qs_ensure_cache "updater"
 
 # Check interval in seconds (600s = 10 minutes)
 INTERVAL=600
