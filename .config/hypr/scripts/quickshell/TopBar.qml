@@ -557,7 +557,7 @@ Variants {
                     }
                 }
             }
-            Timer { interval: 150000; running: true; repeat: true; triggeredOnStart: true; onTriggered: { weatherPoller.running = false; weatherPoller.running = true; } }
+            Timer { interval: 150000; running: Config.weatherWidgetEnabled; repeat: true; triggeredOnStart: true; onTriggered: { weatherPoller.running = false; weatherPoller.running = true; } }
 
 
             Timer {
@@ -1109,8 +1109,9 @@ Variants {
 
                         RowLayout {
                             spacing: barWindow.s(8)
-                            Text { 
-                                text: barWindow.weatherIcon; 
+                            visible: Config.weatherWidgetEnabled
+                            Text {
+                                text: barWindow.weatherIcon;
                                 Layout.alignment: Qt.AlignVCenter;
                                 font.family: "Iosevka Nerd Font"; 
                                 font.pixelSize: barWindow.s(24); 

@@ -97,6 +97,7 @@ Item {
 
     property bool tempPillEnabled: true
     property int statsRefreshSeconds: 2
+    property bool weatherWidgetEnabled: true
 
     property var keybindsData: []
     signal keybindsLoaded()
@@ -117,7 +118,8 @@ Item {
             "kbOptions": config.kbOptions,
             "workspaceCount": config.workspaceCount,
             "tempPillEnabled": config.tempPillEnabled,
-            "statsRefreshSeconds": config.statsRefreshSeconds
+            "statsRefreshSeconds": config.statsRefreshSeconds,
+            "weatherWidgetEnabled": config.weatherWidgetEnabled
         };
 
         config.updateJsonBulk(configObj);
@@ -388,6 +390,7 @@ Item {
                         }
                         if (config.rawSettings.tempPillEnabled !== undefined) config.tempPillEnabled = config.rawSettings.tempPillEnabled;
                         if (config.rawSettings.statsRefreshSeconds !== undefined) config.statsRefreshSeconds = config.rawSettings.statsRefreshSeconds;
+                        if (config.rawSettings.weatherWidgetEnabled !== undefined) config.weatherWidgetEnabled = config.rawSettings.weatherWidgetEnabled;
                         
                         // Map Keybinds
                         if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {

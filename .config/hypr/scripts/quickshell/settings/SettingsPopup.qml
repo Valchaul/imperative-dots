@@ -2003,6 +2003,74 @@ Item {
                             }
                         }
                     }
+
+                    // ── Box 9: Weather widget ────────────────────────────────
+                    Rectangle {
+                        id: box9
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: weatherWidgetRow.implicitHeight + root.s(28)
+                        radius: root.s(12)
+
+                        property bool isActive: root.highlightedBox === 9
+                        color: isActive ? root.sapphire : root.surface0
+                        border.color: isActive ? root.sapphire : root.surface1
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+
+                        MouseArea { anchors.fill: parent; onClicked: root.highlightedBox = 9; z: -1 }
+
+                        RowLayout {
+                            id: weatherWidgetRow
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.margins: root.s(16)
+                            spacing: root.s(14)
+                            Item {
+                                Layout.preferredWidth: root.s(22)
+                                Layout.alignment: Qt.AlignVCenter
+                                Text {
+                                    anchors.centerIn: parent; text: ""
+                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                    color: box9.isActive ? root.base : root.sapphire
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: root.s(3)
+                                Text {
+                                    text: "Weather pill"; font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(14)
+                                    color: box9.isActive ? root.base : root.text; Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Text {
+                                    text: "Show icon/temp in topbar"; font.family: "Inter"; font.pixelSize: root.s(11)
+                                    color: box9.isActive ? Qt.alpha(root.base, 0.75) : Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Layout.preferredWidth: root.s(40); Layout.preferredHeight: root.s(22); radius: root.s(11)
+                                scale: toggle9Ma.containsMouse ? 1.05 : 1.0
+                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                color: Config.weatherWidgetEnabled
+                                    ? (box9.isActive ? root.base : root.sapphire)
+                                    : Qt.alpha(root.surface2, box9.isActive ? 0.4 : 1.0)
+                                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                Rectangle {
+                                    width: root.s(16); height: root.s(16); radius: root.s(8)
+                                    color: Config.weatherWidgetEnabled
+                                        ? (box9.isActive ? root.sapphire : root.base)
+                                        : (box9.isActive ? root.sapphire : root.surface0)
+                                    y: root.s(3); x: Config.weatherWidgetEnabled ? root.s(21) : root.s(3)
+                                    Behavior on x { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                MouseArea { id: toggle9Ma; anchors.fill: parent; hoverEnabled: true; onClicked: Config.weatherWidgetEnabled = !Config.weatherWidgetEnabled; cursorShape: Qt.PointingHandCursor }
+                            }
+                        }
+                    }
                 }
             }
         }
