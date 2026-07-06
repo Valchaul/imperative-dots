@@ -1168,7 +1168,7 @@ Variants {
                         border.width: 1
                         color: Qt.rgba(mocha.base.r, mocha.base.g, mocha.base.b, 0.75)
                         
-                        property real targetWidth: trayRepeater.count > 0 ? trayLayout.width + barWindow.s(24) : 0
+                        property real targetWidth: (Config.systemTrayEnabled && trayRepeater.count > 0) ? trayLayout.width + barWindow.s(24) : 0
                         width: targetWidth
                         Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutExpo } }
                         
@@ -1279,10 +1279,12 @@ Variants {
                                 radius: barWindow.s(10); height: sysLayout.pillHeight;
                                 clip: true
                                 
-                                property real targetWidth: kbLayoutRow.implicitWidth + barWindow.s(24)
+                                property bool hasMultipleLayouts: Config.language ? Config.language.split(",").filter(x => x.trim() !== "").length > 1 : false
+                                property real targetWidth: hasMultipleLayouts ? (kbLayoutRow.implicitWidth + barWindow.s(24)) : 0
                                 width: targetWidth
+                                visible: targetWidth > 0
                                 Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutQuint } }
-                                
+
                                 scale: isHovered ? 1.05 : 1.0
                                 Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
                                 Behavior on color { ColorAnimation { duration: 200 } }
@@ -1493,8 +1495,9 @@ Variants {
                                     }
                                 }
 
-                                property real targetWidth: notifLayoutRow.implicitWidth + barWindow.s(24)
+                                property real targetWidth: Config.notifPillEnabled ? (notifLayoutRow.implicitWidth + barWindow.s(24)) : 0
                                 width: targetWidth
+                                visible: targetWidth > 0
                                 Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutQuint } }
 
                                 scale: isHovered ? 1.05 : 1.0

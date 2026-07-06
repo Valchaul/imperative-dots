@@ -99,6 +99,8 @@ Item {
     property int statsRefreshSeconds: 2
     property bool weatherWidgetEnabled: true
     property bool batteryHistoryEnabled: true
+    property bool notifPillEnabled: true
+    property bool systemTrayEnabled: true
 
     property var keybindsData: []
     signal keybindsLoaded()
@@ -121,7 +123,9 @@ Item {
             "tempPillEnabled": config.tempPillEnabled,
             "statsRefreshSeconds": config.statsRefreshSeconds,
             "weatherWidgetEnabled": config.weatherWidgetEnabled,
-            "batteryHistoryEnabled": config.batteryHistoryEnabled
+            "batteryHistoryEnabled": config.batteryHistoryEnabled,
+            "notifPillEnabled": config.notifPillEnabled,
+            "systemTrayEnabled": config.systemTrayEnabled
         };
 
         config.updateJsonBulk(configObj);
@@ -394,7 +398,9 @@ Item {
                         if (config.rawSettings.statsRefreshSeconds !== undefined) config.statsRefreshSeconds = config.rawSettings.statsRefreshSeconds;
                         if (config.rawSettings.weatherWidgetEnabled !== undefined) config.weatherWidgetEnabled = config.rawSettings.weatherWidgetEnabled;
                         if (config.rawSettings.batteryHistoryEnabled !== undefined) config.batteryHistoryEnabled = config.rawSettings.batteryHistoryEnabled;
-                        
+                        if (config.rawSettings.notifPillEnabled !== undefined) config.notifPillEnabled = config.rawSettings.notifPillEnabled;
+                        if (config.rawSettings.systemTrayEnabled !== undefined) config.systemTrayEnabled = config.rawSettings.systemTrayEnabled;
+
                         // Map Keybinds
                         if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {
                             let tempBinds = [];
