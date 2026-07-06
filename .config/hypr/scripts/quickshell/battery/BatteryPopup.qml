@@ -59,6 +59,21 @@ Item {
     property int upHours: 0
     property int upMins: 0
 
+    // Raw "upower -i" time-to-empty/time-to-full string, e.g. "6,1 hours"
+    property string batTimeRaw: ""
+    readonly property string batTimeLabel: {
+        if (!window.batTimeRaw) return "";
+        let match = window.batTimeRaw.replace(",", ".").match(/([\d.]+)\s*(hour|minute|day)/i);
+        if (!match) return "";
+        let val = parseFloat(match[1]);
+        let unit = match[2].toLowerCase();
+        let totalMinutes = Math.round(unit.startsWith("hour") ? val * 60 : unit.startsWith("day") ? val * 1440 : val);
+        let h = Math.floor(totalMinutes / 60);
+        let m = totalMinutes % 60;
+        let timeStr = h > 0 ? (h + "h " + m + "m") : (m + "m");
+        return timeStr + (window.isCharging ? " until full" : " left");
+    }
+
     property real sysVolume: 0
     property bool sysMuted: false
     property real sysBrightness: 0
@@ -151,7 +166,8 @@ Item {
             "awk '{print int($1/3600)\"h \"int(($1%3600)/60)\"m\"}' /proc/uptime 2>/dev/null || echo '0h 0m'; " +
             "wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{print int($2*100), ($3==\"[MUTED]\"?\"off\":\"on\")}' || echo '0 on'; " +
             "brightnessctl -m 2>/dev/null | awk -F, '{print substr($4, 1, length($4)-1)}' || echo '0'; " +
-            "awk '{print $1}' /proc/uptime 2>/dev/null || echo '0'"
+            "awk '{print $1}' /proc/uptime 2>/dev/null || echo '0'; " +
+            "UP=$(upower -e 2>/dev/null | grep -m1 BAT); if [ -n \"$UP\" ]; then TL=$(upower -i \"$UP\" 2>/dev/null | grep -m1 -E 'time to (empty|full)' | sed -E 's/.*: *//'); echo \"$TL\"; else echo ''; fi"
         ]
         running: true
         stdout: StdioCollector {
@@ -184,6 +200,7 @@ Item {
                         window.sysBrightness = parseInt(lines[5]) || 0;
                     }
                 }
+                window.batTimeRaw = lines.length >= 8 ? lines[7].trim() : "";
             }
         }
     }
@@ -742,6 +759,15 @@ Item {
                                             font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(11)
                                             color: window.subtext0
                                         }
+                                    }
+
+                                    Text {
+                                        Layout.fillWidth: true
+                                        horizontalAlignment: Text.AlignRight
+                                        visible: window.batTimeLabel !== ""
+                                        text: window.batTimeLabel
+                                        font.family: "JetBrains Mono"; font.weight: Font.Medium; font.pixelSize: window.s(10)
+                                        color: window.overlay0
                                     }
 
                                     Canvas {

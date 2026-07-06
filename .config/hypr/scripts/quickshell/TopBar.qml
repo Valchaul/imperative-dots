@@ -274,6 +274,18 @@ Variants {
             property string batPercent: "100%"
             property string batIcon: "󰁹"
             property string batStatus: "Unknown"
+            property string batTimeRaw: ""
+            readonly property string batTimeLabel: {
+                if (!barWindow.batTimeRaw) return "";
+                let match = barWindow.batTimeRaw.replace(",", ".").match(/([\d.]+)\s*(hour|minute|day)/i);
+                if (!match) return "";
+                let val = parseFloat(match[1]);
+                let unit = match[2].toLowerCase();
+                let totalMinutes = Math.round(unit.startsWith("hour") ? val * 60 : unit.startsWith("day") ? val * 1440 : val);
+                let h = Math.floor(totalMinutes / 60);
+                let m = totalMinutes % 60;
+                return h > 0 ? (h + "h " + m + "m") : (m + "m");
+            }
             
             property string kbLayout: "us"
             
@@ -550,6 +562,7 @@ Variants {
                                 if (barWindow.batPercent !== newBat) barWindow.batPercent = newBat;
                                 if (barWindow.batIcon !== data.icon) barWindow.batIcon = data.icon;
                                 if (barWindow.batStatus !== data.status) barWindow.batStatus = data.status;
+                                if (barWindow.batTimeRaw !== data.time) barWindow.batTimeRaw = data.time || "";
                             } catch(e) {}
                         }
                         batteryWaiter.running = false;
@@ -1629,11 +1642,12 @@ Variants {
                                         color: mocha.base 
                                         Behavior on color { ColorAnimation { duration: 300 } }
                                     }
-                                    Text { 
+                                    Text {
                                         anchors.verticalCenter: parent.verticalCenter
                                         visible: !barWindow.isDesktop
-                                        text: barWindow.batPercent; font.family: "JetBrains Mono"; font.pixelSize: barWindow.s(13); font.weight: Font.Black; 
-                                        color: mocha.base 
+                                        text: (Config.batteryPillShowTime && barWindow.batTimeLabel !== "") ? barWindow.batTimeLabel : barWindow.batPercent
+                                        font.family: "JetBrains Mono"; font.pixelSize: barWindow.s(13); font.weight: Font.Black;
+                                        color: mocha.base
                                         Behavior on color { ColorAnimation { duration: 300 } }
                                     }
                                 }

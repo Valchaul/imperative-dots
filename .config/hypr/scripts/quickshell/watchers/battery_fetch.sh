@@ -4,7 +4,7 @@ qs_ensure_cache "battery"
 
 HISTORY_FILE="$QS_CACHE_BATTERY/history.json"
 BOOT_MARKER="$QS_CACHE_BATTERY/boot_marker"
-SAMPLE_INTERVAL=200    # 200 = 3.33 minutes between logged samples
+SAMPLE_INTERVAL=300    # 300 = 5 minutes between logged samples
 
 get_battery_percent() { LC_ALL=C cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1 || echo "100"; }
 get_battery_status() { LC_ALL=C cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -n1 || echo "Full"; }
@@ -36,6 +36,14 @@ PERCENT=$(get_battery_percent)
 STATUS=$(get_battery_status)
 ICON=$(get_battery_icon "$PERCENT" "$STATUS")
 
+# Raw "upower -i" time-to-empty/time-to-full string, e.g. "6,1 hours" — formatted client-side
+UP_DEV=$(upower -e 2>/dev/null | grep -m1 BAT)
+if [ -n "$UP_DEV" ]; then
+    TIME_LEFT=$(upower -i "$UP_DEV" 2>/dev/null | grep -m1 -E 'time to (empty|full)' | sed -E 's/.*: *//')
+else
+    TIME_LEFT=""
+fi
+
 # --- Throttled history logging: one sample per SAMPLE_INTERVAL ---
 # Gated by Settings > General > "Battery history" toggle (default enabled)
 HISTORY_ENABLED=$(jq -r '.batteryHistoryEnabled // true' "$HOME/.config/hypr/settings.json" 2>/dev/null || echo true)
@@ -63,4 +71,4 @@ if [ "$HISTORY_ENABLED" = "true" ]; then
     fi
 fi
 
-jq -n -c --arg percent "$PERCENT" --arg status "$STATUS" --arg icon "$ICON" '{percent: $percent, status: $status, icon: $icon}'
+jq -n -c --arg percent "$PERCENT" --arg status "$STATUS" --arg icon "$ICON" --arg time "$TIME_LEFT" '{percent: $percent, status: $status, icon: $icon, time: $time}'

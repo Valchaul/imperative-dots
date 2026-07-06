@@ -101,6 +101,7 @@ Item {
     property bool batteryHistoryEnabled: true
     property bool notifPillEnabled: true
     property bool systemTrayEnabled: true
+    property bool batteryPillShowTime: false
 
     property var keybindsData: []
     signal keybindsLoaded()
@@ -125,7 +126,8 @@ Item {
             "weatherWidgetEnabled": config.weatherWidgetEnabled,
             "batteryHistoryEnabled": config.batteryHistoryEnabled,
             "notifPillEnabled": config.notifPillEnabled,
-            "systemTrayEnabled": config.systemTrayEnabled
+            "systemTrayEnabled": config.systemTrayEnabled,
+            "batteryPillShowTime": config.batteryPillShowTime
         };
 
         config.updateJsonBulk(configObj);
@@ -400,6 +402,7 @@ Item {
                         if (config.rawSettings.batteryHistoryEnabled !== undefined) config.batteryHistoryEnabled = config.rawSettings.batteryHistoryEnabled;
                         if (config.rawSettings.notifPillEnabled !== undefined) config.notifPillEnabled = config.rawSettings.notifPillEnabled;
                         if (config.rawSettings.systemTrayEnabled !== undefined) config.systemTrayEnabled = config.rawSettings.systemTrayEnabled;
+                        if (config.rawSettings.batteryPillShowTime !== undefined) config.batteryPillShowTime = config.rawSettings.batteryPillShowTime;
 
                         // Map Keybinds
                         if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {

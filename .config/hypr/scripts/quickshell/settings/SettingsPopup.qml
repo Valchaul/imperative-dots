@@ -128,7 +128,7 @@ Item {
         if (tab === 1) return 3;
         if (tab === 2) return dynamicKeybindsModel.count - 1;
         if (tab === 4) return dynamicStartupModel.count - 1;
-        if (tab === 5) return 4;
+        if (tab === 5) return 5;
         return -1;
     }
 
@@ -174,6 +174,8 @@ Item {
                 Config.topbarHelpIcon = !Config.topbarHelpIcon;
             } else if (root.highlightedBox === 4) {
                 Config.systemTrayEnabled = !Config.systemTrayEnabled;
+            } else if (root.highlightedBox === 5) {
+                Config.batteryPillShowTime = !Config.batteryPillShowTime;
             }
         }
     }
@@ -910,11 +912,12 @@ Item {
         { tab: 1, boxIndex: 1, label: "API Key",           desc: "OpenWeather API key",    icon: "󰌆", color: "blue" },
         { tab: 1, boxIndex: 2, label: "City ID",           desc: "OpenWeather city ID",    icon: "󰖐", color: "blue" },
         { tab: 1, boxIndex: 3, label: "Temperature Unit",  desc: "Celsius / Fahrenheit / K", icon: "󰔄", color: "blue" },
-        { tab: 5, boxIndex: 0, label: "Temperature pill",  desc: "Show CPU temp in topbar", icon: "", color: "yellow" },
+        { tab: 5, boxIndex: 0, label: "Temperature pill",  desc: "Show CPU temp in topbar", icon: "", color: "red" },
         { tab: 5, boxIndex: 1, label: "Weather pill",      desc: "Show icon/temp in topbar", icon: "󰖐", color: "sapphire" },
         { tab: 5, boxIndex: 2, label: "Notification pill", desc: "Show pending count in topbar", icon: "󰂚", color: "mauve" },
         { tab: 5, boxIndex: 3, label: "Help icon",         desc: "Show button in topbar",  icon: "󰋖", color: "blue" },
-        { tab: 5, boxIndex: 4, label: "System tray",       desc: "App status icons in topbar", icon: "󰀻", color: "green" }
+        { tab: 5, boxIndex: 4, label: "System tray",       desc: "App status icons in topbar", icon: "󰀻", color: "green" },
+        { tab: 5, boxIndex: 5, label: "Battery pill shows remaining time", desc: "Show remaining time instead of %", icon: "\udb86\udde5", color: "peach" }
     ]
 
     function getMatchingKeybindIndices(query) {
@@ -4895,6 +4898,74 @@ Item {
                                     Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
                                 }
                                 MouseArea { id: toggleTrayMa; anchors.fill: parent; hoverEnabled: true; onClicked: Config.systemTrayEnabled = !Config.systemTrayEnabled; cursorShape: Qt.PointingHandCursor }
+                            }
+                        }
+                    }
+
+                    // ── Box 5: Battery pill shows time ────────────────────────
+                    Rectangle {
+                        id: boxBatteryTime
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: topBarBatTimeRow.implicitHeight + root.s(28)
+                        radius: root.s(12)
+
+                        property bool isActive: root.highlightedBox === 5
+                        color: isActive ? root.peach : root.surface0
+                        border.color: isActive ? root.peach : root.surface1
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+
+                        MouseArea { anchors.fill: parent; onClicked: root.highlightedBox = 5; z: -1 }
+
+                        RowLayout {
+                            id: topBarBatTimeRow
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.margins: root.s(16)
+                            spacing: root.s(14)
+                            Item {
+                                Layout.preferredWidth: root.s(22)
+                                Layout.alignment: Qt.AlignVCenter
+                                Text {
+                                    anchors.centerIn: parent; text: "󰅐"
+                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                    color: boxBatteryTime.isActive ? root.base : root.peach
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: root.s(3)
+                                Text {
+                                    text: "Battery pill shows time"; font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(14)
+                                    color: boxBatteryTime.isActive ? root.base : root.text; Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Text {
+                                    text: "Show remaining time instead of %"; font.family: "Inter"; font.pixelSize: root.s(11)
+                                    color: boxBatteryTime.isActive ? Qt.alpha(root.base, 0.75) : Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Layout.preferredWidth: root.s(40); Layout.preferredHeight: root.s(22); radius: root.s(11)
+                                scale: toggleBatTimeMa.containsMouse ? 1.05 : 1.0
+                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                color: Config.batteryPillShowTime
+                                    ? (boxBatteryTime.isActive ? root.base : root.peach)
+                                    : Qt.alpha(root.surface2, boxBatteryTime.isActive ? 0.4 : 1.0)
+                                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                Rectangle {
+                                    width: root.s(16); height: root.s(16); radius: root.s(8)
+                                    color: Config.batteryPillShowTime
+                                        ? (boxBatteryTime.isActive ? root.peach : root.base)
+                                        : (boxBatteryTime.isActive ? root.peach : root.surface0)
+                                    y: root.s(3); x: Config.batteryPillShowTime ? root.s(21) : root.s(3)
+                                    Behavior on x { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                MouseArea { id: toggleBatTimeMa; anchors.fill: parent; hoverEnabled: true; onClicked: Config.batteryPillShowTime = !Config.batteryPillShowTime; cursorShape: Qt.PointingHandCursor }
                             }
                         }
                     }
