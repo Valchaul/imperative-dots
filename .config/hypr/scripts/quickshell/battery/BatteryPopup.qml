@@ -257,7 +257,7 @@ Item {
         }
     }
     Timer {
-        interval: 30000; running: true; repeat: true; triggeredOnStart: true
+        interval: 30000; running: Config.batteryHistoryEnabled; repeat: true; triggeredOnStart: true
         onTriggered: historyPoller.running = true
     }
 
@@ -1226,6 +1226,7 @@ Item {
 
                             // 0. BATTERY HISTORY DOCK
                             Rectangle {
+                                visible: Config.batteryHistoryEnabled
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: window.s(130)
                                 radius: window.s(14)

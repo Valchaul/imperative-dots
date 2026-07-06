@@ -2071,6 +2071,74 @@ Item {
                             }
                         }
                     }
+
+                    // ── Box 10: Battery history graph ────────────────────────
+                    Rectangle {
+                        id: box10
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: batteryHistoryRow.implicitHeight + root.s(28)
+                        radius: root.s(12)
+
+                        property bool isActive: root.highlightedBox === 10
+                        color: isActive ? root.maroon : root.surface0
+                        border.color: isActive ? root.maroon : root.surface1
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+
+                        MouseArea { anchors.fill: parent; onClicked: root.highlightedBox = 10; z: -1 }
+
+                        RowLayout {
+                            id: batteryHistoryRow
+                            anchors.top: parent.top
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.margins: root.s(16)
+                            spacing: root.s(14)
+                            Item {
+                                Layout.preferredWidth: root.s(22)
+                                Layout.alignment: Qt.AlignVCenter
+                                Text {
+                                    anchors.centerIn: parent; text: "󰄉"
+                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                    color: box10.isActive ? root.base : root.maroon
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            ColumnLayout {
+                                Layout.fillWidth: true; Layout.alignment: Qt.AlignVCenter; spacing: root.s(3)
+                                Text {
+                                    text: "Battery history"; font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(14)
+                                    color: box10.isActive ? root.base : root.text; Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                Text {
+                                    text: "Track & graph charge level since boot"; font.family: "Inter"; font.pixelSize: root.s(11)
+                                    color: box10.isActive ? Qt.alpha(root.base, 0.75) : Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                            }
+                            Rectangle {
+                                Layout.alignment: Qt.AlignVCenter | Qt.AlignRight
+                                Layout.preferredWidth: root.s(40); Layout.preferredHeight: root.s(22); radius: root.s(11)
+                                scale: toggle10Ma.containsMouse ? 1.05 : 1.0
+                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                color: Config.batteryHistoryEnabled
+                                    ? (box10.isActive ? root.base : root.maroon)
+                                    : Qt.alpha(root.surface2, box10.isActive ? 0.4 : 1.0)
+                                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                Rectangle {
+                                    width: root.s(16); height: root.s(16); radius: root.s(8)
+                                    color: Config.batteryHistoryEnabled
+                                        ? (box10.isActive ? root.maroon : root.base)
+                                        : (box10.isActive ? root.maroon : root.surface0)
+                                    y: root.s(3); x: Config.batteryHistoryEnabled ? root.s(21) : root.s(3)
+                                    Behavior on x { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                    Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                }
+                                MouseArea { id: toggle10Ma; anchors.fill: parent; hoverEnabled: true; onClicked: Config.batteryHistoryEnabled = !Config.batteryHistoryEnabled; cursorShape: Qt.PointingHandCursor }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -3150,14 +3218,6 @@ Item {
         border.width: 1
         border.color: Qt.rgba(root.surface1.r, root.surface1.g, root.surface1.b, 0.9)
         clip: true
-
-        Rectangle {
-            anchors.left: parent.left; anchors.top: parent.top; anchors.bottom: parent.bottom; width: root.s(16)
-            color: sidebarPanel.color
-            Rectangle { anchors.top: parent.top; width: parent.width; height: 1; color: sidebarPanel.border.color }
-            Rectangle { anchors.bottom: parent.bottom; width: parent.width; height: 1; color: sidebarPanel.border.color }
-            Rectangle { anchors.left: parent.left; width: 1; height: parent.height; color: sidebarPanel.border.color }
-        }
 
         Item {
             anchors.fill: parent
