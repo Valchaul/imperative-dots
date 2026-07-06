@@ -83,18 +83,6 @@ PanelWindow {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 48
-
-        anchors.leftMargin: (masterWindow.currentActive !== "hidden" && masterWindow.animX < 10 && masterWindow.animY < height) ? masterWindow.animW : 0
-        anchors.rightMargin: (masterWindow.currentActive !== "hidden" && (masterWindow.animX + masterWindow.animW) > (parent.width - 10) && masterWindow.animY < height) ? masterWindow.animW : 0
-
-        Behavior on anchors.leftMargin {
-            enabled: masterWindow.currentActive !== "hidden"
-            NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.OutCubic }
-        }
-        Behavior on anchors.rightMargin {
-            enabled: masterWindow.currentActive !== "hidden"
-            NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.OutCubic }
-        }
     }
 
     MouseArea {
@@ -239,6 +227,15 @@ PanelWindow {
     }
 
     property var notifModel: globalNotificationHistory
+
+    // Mirror the pending-notification count to a file so TopBar (a separate
+    // window with no direct binding to Main.qml) can drive a badge pill.
+    Connections {
+        target: globalNotificationHistory
+        function onCountChanged() {
+            Quickshell.execDetached(["sh", "-c", "echo '" + globalNotificationHistory.count + "' > " + paths.runDir + "/notif_count"]);
+        }
+    }
 
     Notifs.NotificationPopups {
         id: osdPopups

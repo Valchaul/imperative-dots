@@ -32,10 +32,11 @@ function getLayout(name, mx, my, mw, mh, userScale) {
 
     let base = {
         // --- Top Right Popups ---
-        "battery":   { w: s(801, scale), h: s(860, scale), rx: mw - s(805, scale), ry: s(60, scale), comp: "battery/BatteryPopup.qml" },
+        "battery":   { w: s(520, scale), h: s(860, scale), rx: mw - s(524, scale), ry: s(60, scale), comp: "battery/BatteryPopup.qml" },
         "network":   { w: s(900, scale), h: s(700, scale), rx: mw - s(904, scale), ry: s(60, scale), comp: "network/NetworkPopup.qml" },
         "volume":    { w: s(450, scale), h: s(700, scale), rx: mw - s(455, scale), ry: s(60, scale), comp: "volume/VolumePopup.qml" },
         "stats":     { w: s(700, scale), h: s(460, scale), rx: mw - s(705, scale), ry: s(60, scale), comp: "quickactions/StatsPopup.qml" },
+        "notifications": { w: s(460, scale), h: s(720, scale), rx: mw - s(465, scale), ry: s(60, scale), comp: "notifications/NotificationCenterPopup.qml" },
 
         // --- Central Standard Tools ---
         "applauncher": { w: s(800, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "applauncher/appLauncher.qml" },

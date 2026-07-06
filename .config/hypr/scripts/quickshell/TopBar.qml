@@ -82,14 +82,8 @@ Variants {
             
             property int workspaceCount: 8
             
-            property string activeWidget: "" 
+            property string activeWidget: ""
             property bool isSettingsOpen: activeWidget === "settings"
-
-            property real settingsSlideProgress: isSettingsOpen ? 1.0 : 0.0
-            Behavior on settingsSlideProgress { 
-                enabled: barWindow.startupCascadeFinished
-                NumberAnimation { duration: 600; easing.type: Easing.OutExpo } 
-            }
 
             onIsSettingsOpenChanged: {
                 if (!barWindow.isSettingsOpen && barWindow.pendingReload) {
@@ -121,7 +115,33 @@ Variants {
                     running = true;
                 }
             }
-            
+
+            property int notifCount: 0
+
+            Process {
+                id: notifCountPoller
+                command: ["bash", "-c", "cat " + paths.runDir + "/notif_count 2>/dev/null || echo '0'"]
+                running: true
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        let n = parseInt(this.text.trim()) || 0;
+                        if (barWindow.notifCount !== n) barWindow.notifCount = n;
+                    }
+                }
+            }
+
+            Process {
+                id: notifCountWatcher
+                command: ["bash", "-c", "while [ ! -f " + paths.runDir + "/notif_count ]; do sleep 1; done; inotifywait -qq -e modify,close_write " + paths.runDir + "/notif_count"]
+                running: true
+                onExited: {
+                    notifCountPoller.running = false;
+                    notifCountPoller.running = true;
+                    running = false;
+                    running = true;
+                }
+            }
+
             Process {
                 id: recPoller
                 command: ["bash", "-c", "if [ -s " + paths.getCacheDir("recording") + "/rec_pid ] && kill -0 $(cat " + paths.getCacheDir("recording") + "/rec_pid) 2>/dev/null; then echo '1'; else echo '0'; fi"]
@@ -596,10 +616,9 @@ Variants {
                     
                     property bool showLayout: false
                     
-                    opacity: (showLayout && !barWindow.isSettingsOpen) ? 1 : 0
-                    enabled: !barWindow.isSettingsOpen
-                    
-                    property real targetX: (showLayout && !barWindow.isSettingsOpen) ? 0 : barWindow.s(-200)
+                    opacity: showLayout ? 1 : 0
+
+                    property real targetX: showLayout ? 0 : barWindow.s(-200)
                     x: targetX
                     Behavior on x { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
                     Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
@@ -785,11 +804,8 @@ Variants {
                     width: workspacesModel.count > 0 ? wsLayout.implicitWidth + barWindow.s(20) : 0
                     
                     property real defaultX: leftContent.x + leftContent.width + barWindow.s(4)
-                    property real settingsX: mediaBox.settingsX - width - (width > 0 ? barWindow.s(4) : 0)
-                                        
-                    x: defaultX + (settingsX - defaultX) * barWindow.settingsSlideProgress
 
-                    property bool limitActive: barWindow.isSettingsOpen && barWindow.isMediaActive
+                    x: defaultX
 
                     visible: width > 0 || opacity > 0
                     opacity: workspacesModel.count > 0 ? 1 : 0
@@ -840,9 +856,6 @@ Variants {
                             model: workspacesModel
                             delegate: Rectangle {
                                 id: wsPill
-                                
-                                property bool isLimited: workspacesBox.limitActive && index >= 6
-                                visible: !isLimited
                                 
                                 property bool isHovered: wsPillMouse.containsMouse
                                 
@@ -920,9 +933,8 @@ Variants {
                     Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
 
                     property real defaultX: workspacesBox.defaultX + workspacesBox.width + (workspacesBox.width > 0 ? barWindow.s(4) : 0)
-                    property real settingsX: centerBox.settingsX - width - (width > 0 ? barWindow.s(4) : 0)
 
-                    x: defaultX + (settingsX - defaultX) * barWindow.settingsSlideProgress
+                    x: defaultX
 
                     visible: width > 0 || opacity > 0
                     opacity: barWindow.isMediaActive ? 1.0 : 0.0
@@ -1065,10 +1077,9 @@ Variants {
                     
                     property real pureCenter: (parent.width - width) / 2
                     property real minCenterDefaultX: mediaBox.defaultX + mediaBox.width + (mediaBox.width > 0 ? barWindow.s(4) : 0)
-                    property real settingsX: barWindow.width - rightContent.width - width - barWindow.s(4)
                     property real defaultX: Math.max(minCenterDefaultX, pureCenter)
-                    
-                    x: defaultX + (settingsX - defaultX) * barWindow.settingsSlideProgress
+
+                    x: defaultX
                     
                     property bool showLayout: false
                     opacity: showLayout ? 1 : 0
@@ -1460,6 +1471,63 @@ Variants {
                                     }
                                 }
                                 MouseArea { id: tempMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle stats"]) }
+                            }
+
+                            Rectangle {
+                                id: notifPill
+                                property bool isHovered: notifMouse.containsMouse
+                                property int pendingCount: barWindow.notifCount
+                                color: isHovered ? Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6) : Qt.rgba(mocha.surface0.r, mocha.surface0.g, mocha.surface0.b, 0.4)
+                                radius: barWindow.s(10); height: sysLayout.pillHeight
+                                clip: true
+
+                                Rectangle {
+                                    anchors.fill: parent
+                                    radius: barWindow.s(10)
+                                    opacity: notifPill.pendingCount > 0 ? 1.0 : 0.0
+                                    Behavior on opacity { NumberAnimation { duration: 300 } }
+                                    gradient: Gradient {
+                                        orientation: Gradient.Horizontal
+                                        GradientStop { position: 0.0; color: mocha.mauve }
+                                        GradientStop { position: 1.0; color: Qt.lighter(mocha.mauve, 1.3) }
+                                    }
+                                }
+
+                                property real targetWidth: notifLayoutRow.implicitWidth + barWindow.s(24)
+                                width: targetWidth
+                                Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutQuint } }
+
+                                scale: isHovered ? 1.05 : 1.0
+                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
+                                Behavior on color { ColorAnimation { duration: 200 } }
+
+                                property bool initAnimTrigger: false
+                                Timer { running: rightContent.showLayout && !parent.initAnimTrigger; interval: 185; onTriggered: parent.initAnimTrigger = true }
+                                opacity: initAnimTrigger ? 1 : 0
+                                transform: Translate { y: parent.initAnimTrigger ? 0 : barWindow.s(15); Behavior on y { NumberAnimation { duration: 500; easing.type: Easing.OutBack } } }
+                                Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
+
+                                Row {
+                                    id: notifLayoutRow
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: barWindow.s(12)
+                                    spacing: barWindow.s(8)
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: notifPill.pendingCount > 0 ? "󰂞" : "󰂚"
+                                        font.family: "Iosevka Nerd Font"; font.pixelSize: barWindow.s(16)
+                                        color: notifPill.pendingCount > 0 ? mocha.base : mocha.subtext0
+                                    }
+                                    Text {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: notifPill.pendingCount
+                                        visible: notifPill.pendingCount > 0
+                                        font.family: "JetBrains Mono"; font.pixelSize: barWindow.s(13); font.weight: Font.Black
+                                        color: mocha.base
+                                    }
+                                }
+                                MouseArea { id: notifMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle notifications"]) }
                             }
 
                             Rectangle {

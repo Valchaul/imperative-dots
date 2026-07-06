@@ -3225,19 +3225,111 @@ Item {
             scale: 0.96 + (0.04 * introContent)
             transform: Translate { y: root.s(40) * (1.0 - introContent) }
 
-            ColumnLayout {
+            RowLayout {
                 anchors.fill: parent
                 anchors.margins: root.s(20)
-                spacing: root.s(12)
+                spacing: root.s(16)
+
+                // ── Sidebar (vertical tabs, mirrors Guide's nav) ─────────────
+                Rectangle {
+                    Layout.fillHeight: true
+                    Layout.preferredWidth: root.s(190)
+                    radius: root.s(12)
+                    color: Qt.alpha(root.surface0, 0.4)
+                    border.color: root.surface1
+                    border.width: 1
+
+                    ColumnLayout {
+                        anchors.fill: parent
+                        anchors.margins: root.s(12)
+                        spacing: root.s(4)
+
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.s(44) * root.tabNames.length
+
+                            Rectangle {
+                                id: settingsActiveHighlight
+                                width: parent.width
+                                height: root.s(40)
+                                radius: root.s(8)
+                                color: root.mauve
+                                z: 0
+                                y: root.currentTab * root.s(44)
+                                Behavior on y { NumberAnimation { duration: 400; easing.type: Easing.OutExpo } }
+                            }
+
+                            Column {
+                                anchors.fill: parent
+                                spacing: root.s(4)
+
+                                Repeater {
+                                    model: root.tabNames.length
+                                    Rectangle {
+                                        width: parent.width
+                                        height: root.s(40)
+                                        radius: root.s(8)
+                                        z: 1
+                                        property bool isActive: root.currentTab === index
+                                        color: isActive ? "transparent" : (settingsTabMa.containsMouse ? Qt.alpha(root.surface1, 0.5) : "transparent")
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: root.s(14)
+                                            anchors.rightMargin: root.s(10)
+                                            spacing: root.s(10)
+                                            property real contentShift: parent.isActive ? root.s(6) : 0
+                                            Behavior on contentShift { NumberAnimation { duration: 400; easing.type: Easing.OutExpo } }
+                                            transform: Translate { x: contentShift }
+
+                                            Text {
+                                                text: root.tabIcons[index]
+                                                font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16)
+                                                color: parent.parent.isActive ? root.base : root.subtext0
+                                                Behavior on color { ColorAnimation { duration: 150 } }
+                                            }
+                                            Text {
+                                                text: root.tabNames[index]
+                                                font.family: "JetBrains Mono"
+                                                font.weight: parent.parent.isActive ? Font.Bold : Font.Medium
+                                                font.pixelSize: root.s(12)
+                                                color: parent.parent.isActive ? root.base : root.subtext0
+                                                Layout.fillWidth: true
+                                                elide: Text.ElideRight
+                                                Behavior on color { ColorAnimation { duration: 150 } }
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: settingsTabMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: { root.currentTab = index; root.clearHighlight(); root.isSearchMode = false; }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Item { Layout.fillHeight: true }
+                    }
+                }
+
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    Layout.fillHeight: true
+                    spacing: root.s(12)
 
                 // ── Header ────────────────────────────────────────────────────
                 RowLayout {
                     Layout.fillWidth: true
                     spacing: root.s(10)
 
-                    Text { 
+                    Text {
                         text: "Settings"; font.family: "Inter"; font.weight: Font.Bold; font.pixelSize: root.s(24)
-                        color: root.text; Layout.alignment: Qt.AlignVCenter 
+                        color: root.text; Layout.alignment: Qt.AlignVCenter
                     }
 
                     Rectangle {
@@ -3444,173 +3536,6 @@ Item {
                         }
                     }
                     MouseArea { id: globalSearchBarMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; enabled: !root.isSearchMode; onClicked: { root.isSearchMode = true; globalSearchInput.forceActiveFocus(); } }
-                }
-
-                // ── Tab bar ───────────────────────────────────────────────────
-                Item {
-                    id: tabBarContainer
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: root.s(38)
-                    visible: !root.isSearchMode
-                    opacity: root.isSearchMode ? 0.0 : 1.0
-                    Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
-                    clip: true
-
-                    Rectangle {
-                        anchors.fill: parent; radius: root.s(10)
-                        color: root.surface0; border.color: root.surface1; border.width: 1
-                    }
-
-                    Flickable {
-                        id: tabBarFlickable
-                        anchors.fill: parent
-                        clip: false
-                        // UX Update: Elastic boundaries feel much more native and premium than stopping dead
-                        boundsBehavior: Flickable.DragAndOvershootBounds
-
-                        // Reduced the divisor to 2.5 so tabs don't squash and it's clear the list scrolls
-                        property real tabItemW: (tabBarContainer.width - root.s(6)) / (root.tabNames.length <= 3 ? 3 : 2.5)
-                        contentWidth: root.tabNames.length * tabItemW + root.s(6)
-                        contentHeight: height
-
-                        // Graceful smooth scrolling animation for tab selection
-                        NumberAnimation {
-                            id: smoothScrollAnim
-                            target: tabBarFlickable
-                            property: "contentX"
-                            duration: 350
-                            easing.type: Easing.OutCubic
-                        }
-
-                        // UX Update: Dedicated animation for hardware scroll wheels to prevent jagged jumps
-                        NumberAnimation {
-                            id: wheelScrollAnim
-                            target: tabBarFlickable
-                            property: "contentX"
-                            duration: 150
-                            easing.type: Easing.OutSine
-                        }
-
-                        WheelHandler {
-                            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                            onWheel: (event) => {
-                                smoothScrollAnim.stop(); // Cancel auto-scroll if user takes control
-                                
-                                // UX Update: Support both vertical mice and horizontal trackpads seamlessly
-                                let delta = Math.abs(event.angleDelta.x) > 0 ? event.angleDelta.x : event.angleDelta.y;
-                                
-                                // Calculate the target with clamping so the animation doesn't break boundaries
-                                let targetX = Math.max(0, Math.min(
-                                    tabBarFlickable.contentWidth - tabBarFlickable.width,
-                                    tabBarFlickable.contentX - delta * 0.75 // 0.75 smooths out hyper-fast scroll wheels
-                                ));
-                                
-                                wheelScrollAnim.to = targetX;
-                                wheelScrollAnim.start();
-                                
-                                event.accepted = true;
-                            }
-                        }
-
-                        Rectangle {
-                            id: tabHighlightPill
-                            y: root.s(3)
-                            height: root.s(32)
-                            radius: root.s(8)
-
-                            property color c0: root.teal
-                            property color c1: root.blue
-                            property color c2: root.peach
-                            property color c3: root.green
-                            property color c4: root.mauve
-                            property color targetColor: {
-                                if (root.currentTab === 0) return c0;
-                                if (root.currentTab === 1) return c1;
-                                if (root.currentTab === 2) return c2;
-                                if (root.currentTab === 3) return c3;
-                                return c4;
-                            }
-                            color: targetColor
-                            Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutExpo } }
-
-                            property int prevTab: 0
-                            property int curTab: root.currentTab
-
-                            onCurTabChanged: {
-                                if (curTab > prevTab) {
-                                    tabRightAnim.duration = 200; tabLeftAnim.duration = 350;
-                                } else if (curTab < prevTab) {
-                                    tabLeftAnim.duration = 200; tabRightAnim.duration = 350;
-                                }
-                                prevTab = curTab;
-                                
-                                // Graceful scrolling: center the newly selected tab
-                                let tLeft = root.s(3) + curTab * tabBarFlickable.tabItemW;
-                                let targetX = tLeft - (tabBarFlickable.width / 2) + (tabBarFlickable.tabItemW / 2);
-                                
-                                // Clamp bounds
-                                targetX = Math.max(0, Math.min(tabBarFlickable.contentWidth - tabBarFlickable.width, targetX));
-                                
-                                smoothScrollAnim.to = targetX;
-                                smoothScrollAnim.start();
-                            }
-
-                            property real targetLeft: root.s(3) + curTab * tabBarFlickable.tabItemW
-                            property real targetRight: targetLeft + tabBarFlickable.tabItemW
-
-                            property real actualLeft: targetLeft
-                            property real actualRight: targetRight
-
-                            Behavior on actualLeft { NumberAnimation { id: tabLeftAnim; duration: 250; easing.type: Easing.OutExpo } }
-                            Behavior on actualRight { NumberAnimation { id: tabRightAnim; duration: 250; easing.type: Easing.OutExpo } }
-
-                            x: actualLeft
-                            width: actualRight - actualLeft
-                        }
-
-                        Row {
-                            x: root.s(3)
-                            spacing: 0
-                            height: tabBarFlickable.height
-
-                            Repeater {
-                                model: root.tabNames.length
-                                Item {
-                                    width: tabBarFlickable.tabItemW
-                                    height: parent.height
-
-                                    property bool isActive: root.currentTab === index
-
-                                    RowLayout {
-                                        anchors.centerIn: parent
-                                        spacing: root.s(7)
-                                        Text {
-                                            text: root.tabIcons[index]
-                                            font.family: "Iosevka Nerd Font"
-                                            font.pixelSize: root.s(14)
-                                            color: isActive ? root.base : root.subtext0
-                                            Behavior on color { ColorAnimation { duration: 250; easing.type: Easing.OutExpo } }
-                                        }
-                                        Text {
-                                            text: root.tabNames[index]
-                                            font.family: "JetBrains Mono"
-                                            font.weight: isActive ? Font.Bold : Font.Medium
-                                            font.pixelSize: root.s(12)
-                                            color: isActive ? root.base : root.subtext0
-                                            Behavior on color { ColorAnimation { duration: 250; easing.type: Easing.OutExpo } }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: { root.currentTab = index; root.clearHighlight(); }
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
 
                 // ── Content area ──────────────────────────────────────────────
@@ -3929,6 +3854,7 @@ Item {
                 }
             }
         }
+        }
     }
 
     Component {
@@ -4153,6 +4079,7 @@ Item {
             contentWidth: width
             contentHeight: monCol.implicitHeight + root.s(40)
             boundsBehavior: Flickable.StopAtBounds
+            
             clip: true
             ColumnLayout {
                 id: monCol
@@ -4163,6 +4090,7 @@ Item {
                 Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.s(220)
+                    Layout.topMargin: root.s(20)
                     visible: Config.monitorsModel.count <= 1
 
                     Item {
