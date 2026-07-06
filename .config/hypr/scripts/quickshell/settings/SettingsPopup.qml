@@ -2030,7 +2030,7 @@ Item {
                                 Layout.preferredWidth: root.s(22)
                                 Layout.alignment: Qt.AlignVCenter
                                 Text {
-                                    anchors.centerIn: parent; text: ""
+                                    anchors.centerIn: parent; text: "󰖐"
                                     font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
                                     color: box9.isActive ? root.base : root.sapphire
                                     Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
