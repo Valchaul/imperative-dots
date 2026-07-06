@@ -2,6 +2,12 @@
 
 source "$(dirname "${BASH_SOURCE[0]}")/caching.sh"
 qs_ensure_cache "wallpaper_picker"
+qs_ensure_cache "bluetooth"
+
+# Power on the bluetooth adapter at session start if enabled in the Bluetooth popup
+if [ "$(cat "$QS_CACHE_BLUETOOTH/on_startup" 2>/dev/null)" = "1" ]; then
+    bluetoothctl power on >/dev/null 2>&1 &
+fi
 
 FLAG="$QS_STATE_WALLPAPER_PICKER/wallpaper_initialized"
 CACHE_IMG="$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.png"

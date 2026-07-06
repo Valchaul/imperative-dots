@@ -468,6 +468,19 @@ Item {
     property var btConnected: []
     property var btList: []
     readonly property bool isBtConn: window.btConnected.length > 0
+
+    // Whether bluetoothctl should be powered on at Hyprland session start (read by init.sh)
+    property bool btStartupEnabled: false
+    Process {
+        id: btStartupInit
+        running: true
+        command: ["bash", "-c", "cat " + paths.getCacheDir("bluetooth") + "/on_startup 2>/dev/null || echo '0'"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                window.btStartupEnabled = (this.text.trim() === "1");
+            }
+        }
+    }
     
     onBtConnectedChanged: { 
         syncCores();
@@ -895,6 +908,64 @@ Item {
 
                         opacity: Object.keys(window.disconnectingDevices).length > 0 ? 0.2 : (window.currentConn ? 0.08 - (index * 0.02) : 0.03)
                         Behavior on opacity { NumberAnimation { duration: 150 } }
+                    }
+                }
+            }
+
+            // ── Bluetooth: power-on-at-login toggle ──────────────────────
+            Rectangle {
+                id: btStartupToggle
+                visible: window.btPresent && window.activeMode === "bt"
+                opacity: visible ? 1.0 : 0.0
+                Behavior on opacity { NumberAnimation { duration: 250 } }
+
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.margins: window.s(20)
+
+                property bool isHovered: btStartupMa.containsMouse
+                width: btStartupRow.implicitWidth + window.s(24)
+                height: window.s(38)
+                radius: window.s(12)
+                clip: true
+                color: window.btStartupEnabled ? Qt.alpha(window.activeColor, 0.15) : (isHovered ? window.surface1 : "transparent")
+                border.color: window.btStartupEnabled ? window.activeColor : (isHovered ? window.surface2 : "transparent")
+                border.width: 1
+                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
+                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                Row {
+                    id: btStartupRow
+                    anchors.left: parent.left
+                    anchors.leftMargin: window.s(10)
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: window.s(8)
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        font.family: "Iosevka Nerd Font"
+                        font.pixelSize: window.s(16)
+                        color: window.btStartupEnabled ? window.activeColor : (btStartupToggle.isHovered ? window.text : window.overlay0)
+                        text: "󰐥"
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                    }
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "On at login"
+                        font.family: "JetBrains Mono"
+                        font.weight: Font.Bold
+                        font.pixelSize: window.s(12)
+                        color: window.btStartupEnabled ? window.activeColor : window.text
+                    }
+                }
+
+                MouseArea {
+                    id: btStartupMa
+                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                    onClicked: {
+                        window.btStartupEnabled = !window.btStartupEnabled;
+                        Quickshell.execDetached(["sh", "-c", "echo '" + (window.btStartupEnabled ? "1" : "0") + "' > " + paths.getCacheDir("bluetooth") + "/on_startup"]);
                     }
                 }
             }
