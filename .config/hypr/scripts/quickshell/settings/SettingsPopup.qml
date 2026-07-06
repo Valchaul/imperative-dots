@@ -1088,7 +1088,7 @@ Item {
 
                     StepperBox {
                         theme: root; scaleFunc: root.s
-                        icon: "󰨇"; label: "Stats refresh rate"; description: "CPU/RAM/temp/disk polling interval"
+                        icon: "󱎴"; label: "Stats refresh rate"; description: "CPU/RAM/temp/disk polling interval"
                         accentColor: root.pink
                         value: Config.statsRefreshSeconds; minValue: 1; maxValue: 30; stepSize: 1
                         decimals: 0; unit: "s"; signedDisplay: false
@@ -1102,6 +1102,14 @@ Item {
                         accentColor: root.maroon
                         checked: Config.batteryHistoryEnabled
                         onToggled: Config.batteryHistoryEnabled = !Config.batteryHistoryEnabled
+                    }
+
+                    ToggleBox {
+                        theme: root; scaleFunc: root.s
+                        icon: ""; label: "Quick actions"; description: "Edge-hover sidebar (draw, stats, timer)"
+                        accentColor: root.blue
+                        checked: Config.quickActionsEnabled
+                        onToggled: Config.quickActionsEnabled = !Config.quickActionsEnabled
                     }
         }
     }

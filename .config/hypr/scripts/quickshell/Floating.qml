@@ -15,8 +15,9 @@ Variants {
 
             WlrLayershell.namespace: "qs-floating-overlay"
             WlrLayershell.layer: WlrLayer.Overlay
-            exclusionMode: ExclusionMode.Ignore 
+            exclusionMode: ExclusionMode.Ignore
             color: "transparent"
+            visible: Config.quickActionsEnabled
             
             focusable: isSidebarVisible && (!isPinned || (typeof mainHoverTracker !== "undefined" && mainHoverTracker.hovered))
 

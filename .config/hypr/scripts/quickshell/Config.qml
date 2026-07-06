@@ -97,6 +97,7 @@ Item {
     property bool blurEnabled: true
     property bool animationsEnabled: true
     property bool naturalScrollEnabled: true
+    property bool quickActionsEnabled: true
 
     property string weatherUnit: "metric"
     property string weatherApiKey: ""
@@ -135,6 +136,7 @@ Item {
             "blurEnabled": config.blurEnabled,
             "animationsEnabled": config.animationsEnabled,
             "naturalScrollEnabled": config.naturalScrollEnabled,
+            "quickActionsEnabled": config.quickActionsEnabled,
             "workspaceCount": config.workspaceCount,
             "tempPillEnabled": config.tempPillEnabled,
             "statsRefreshSeconds": config.statsRefreshSeconds,
@@ -414,6 +416,7 @@ Item {
                         if (config.rawSettings.blurEnabled !== undefined) config.blurEnabled = config.rawSettings.blurEnabled;
                         if (config.rawSettings.animationsEnabled !== undefined) config.animationsEnabled = config.rawSettings.animationsEnabled;
                         if (config.rawSettings.naturalScrollEnabled !== undefined) config.naturalScrollEnabled = config.rawSettings.naturalScrollEnabled;
+                        if (config.rawSettings.quickActionsEnabled !== undefined) config.quickActionsEnabled = config.rawSettings.quickActionsEnabled;
                         if (config.rawSettings.workspaceCount !== undefined) {
                             config.workspaceCount = config.rawSettings.workspaceCount;
                             config.initialWorkspaceCount = config.rawSettings.workspaceCount;
