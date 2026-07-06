@@ -4,9 +4,15 @@ source "$(dirname "${BASH_SOURCE[0]}")/caching.sh"
 qs_ensure_cache "wallpaper_picker"
 qs_ensure_cache "bluetooth"
 
-# Power on the bluetooth adapter at session start if enabled in the Bluetooth popup
-if [ "$(cat "$QS_CACHE_BLUETOOTH/on_startup" 2>/dev/null)" = "1" ]; then
-    bluetoothctl power on >/dev/null 2>&1 &
+# Enforce the Bluetooth popup's "on at login" preference — BlueZ has its own
+# AutoEnable policy that powers the adapter on independently, so an explicit
+# "off" here must be forced too, not just skipped.
+if [ -f "$QS_CACHE_BLUETOOTH/on_startup" ]; then
+    if [ "$(cat "$QS_CACHE_BLUETOOTH/on_startup" 2>/dev/null)" = "1" ]; then
+        bluetoothctl power on >/dev/null 2>&1 &
+    else
+        bluetoothctl power off >/dev/null 2>&1 &
+    fi
 fi
 
 FLAG="$QS_STATE_WALLPAPER_PICKER/wallpaper_initialized"
