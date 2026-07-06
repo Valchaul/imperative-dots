@@ -103,8 +103,19 @@ Item {
     property real sysBrightness: 0
     
     property string currentUserName: ""
-    
+
     property bool dndEnabled: false
+
+    // Last 8h of {t, p} battery-percent samples, logged every 10 min by battery_fetch.sh
+    property var batteryHistory: []
+    // Epoch time this boot started — caps the history graph to the current session
+    property real bootEpoch: 0
+
+    // Battery samples clipped to the current boot session (never shows data from before the last boot)
+    function sessionHistory() {
+        if (window.bootEpoch <= 0) return window.batteryHistory;
+        return window.batteryHistory.filter(function(d) { return d.t >= window.bootEpoch; });
+    }
 
     // State object for collapsible notification groups
     property var collapsedGroups: ({})
@@ -191,12 +202,16 @@ Item {
             "powerprofilesctl get 2>/dev/null || echo 'balanced'; " +
             "awk '{print int($1/3600)\"h \"int(($1%3600)/60)\"m\"}' /proc/uptime 2>/dev/null || echo '0h 0m'; " +
             "wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{print int($2*100), ($3==\"[MUTED]\"?\"off\":\"on\")}' || echo '0 on'; " +
-            "brightnessctl -m 2>/dev/null | awk -F, '{print substr($4, 1, length($4)-1)}' || echo '0'"
+            "brightnessctl -m 2>/dev/null | awk -F, '{print substr($4, 1, length($4)-1)}' || echo '0'; " +
+            "awk '{print $1}' /proc/uptime 2>/dev/null || echo '0'"
         ]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
                 let lines = this.text.trim().split("\n");
+                if (lines.length >= 7) {
+                    window.bootEpoch = (Date.now() / 1000) - parseFloat(lines[6]);
+                }
                 if (lines.length >= 6) {
                     if (window.batCapacity !== parseInt(lines[0])) {
                         window.batCapacity = parseInt(lines[0]);
@@ -227,6 +242,23 @@ Item {
     Timer {
         interval: 1500; running: true; repeat: true; triggeredOnStart: true;
         onTriggered: sysPoller.running = true
+    }
+
+    Process {
+        id: historyPoller
+        command: ["bash", "-c", "cat " + paths.getCacheDir("battery") + "/history.json 2>/dev/null || echo '[]'"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    let parsed = JSON.parse(this.text.trim());
+                    if (Array.isArray(parsed)) window.batteryHistory = parsed;
+                } catch (e) {}
+            }
+        }
+    }
+    Timer {
+        interval: 30000; running: true; repeat: true; triggeredOnStart: true
+        onTriggered: historyPoller.running = true
     }
 
     property real globalOrbitAngle: 0
@@ -1192,7 +1224,166 @@ Item {
                             anchors.margins: window.s(25)
                             spacing: window.s(15)
 
-                            // 1. HARDWARE CONTROLS DOCK (Sliders)
+                            // 0. BATTERY HISTORY DOCK
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: window.s(130)
+                                radius: window.s(14)
+                                color: "transparent"
+                                border.color: window.surface1
+                                border.width: 0
+
+                                opacity: introSliders
+                                transform: Translate { y: window.s(20) * (1.0 - introSliders) }
+
+                                ColumnLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: window.s(14)
+                                    spacing: window.s(6)
+
+                                    RowLayout {
+                                        Layout.fillWidth: true
+                                        Text {
+                                            text: "SINCE BOOT"
+                                            font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(11)
+                                            color: window.subtext0
+                                        }
+                                        Item { Layout.fillWidth: true }
+                                        Text {
+                                            property var session: window.sessionHistory()
+                                            visible: session.length > 0
+                                            text: (session.length > 0 ? session[0].p : 0) + "% → " + Math.round(window.animCapacity) + "%"
+                                            font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(11)
+                                            color: window.subtext0
+                                        }
+                                    }
+
+                                    Canvas {
+                                        id: historyCanvas
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+
+                                        property var pts: window.sessionHistory()
+                                        onPtsChanged: requestPaint()
+                                        onWidthChanged: requestPaint()
+                                        onHeightChanged: requestPaint()
+                                        Connections { target: window; function onBatColorStartChanged() { historyCanvas.requestPaint() } }
+                                        Connections { target: window; function onBootEpochChanged() { historyCanvas.requestPaint() } }
+
+                                        onPaint: {
+                                            var ctx = getContext("2d");
+                                            ctx.clearRect(0, 0, width, height);
+                                            var data = pts;
+                                            if (!data || data.length < 2) return;
+
+                                            var minT = data[0].t;
+                                            var maxT = data[data.length - 1].t;
+                                            var spanT = Math.max(1, maxT - minT);
+
+                                            function xFor(t) { return ((t - minT) / spanT) * width; }
+                                            function yFor(p) { return height - (p / 100) * height; }
+
+                                            ctx.beginPath();
+                                            ctx.moveTo(xFor(data[0].t), yFor(data[0].p));
+                                            for (var i = 1; i < data.length; i++) ctx.lineTo(xFor(data[i].t), yFor(data[i].p));
+                                            ctx.lineTo(xFor(data[data.length - 1].t), height);
+                                            ctx.lineTo(xFor(data[0].t), height);
+                                            ctx.closePath();
+                                            var fillGrad = ctx.createLinearGradient(0, 0, 0, height);
+                                            fillGrad.addColorStop(0, Qt.rgba(window.batColorStart.r, window.batColorStart.g, window.batColorStart.b, 0.35).toString());
+                                            fillGrad.addColorStop(1, Qt.rgba(window.batColorStart.r, window.batColorStart.g, window.batColorStart.b, 0.0).toString());
+                                            ctx.fillStyle = fillGrad;
+                                            ctx.fill();
+
+                                            ctx.beginPath();
+                                            ctx.moveTo(xFor(data[0].t), yFor(data[0].p));
+                                            for (var j = 1; j < data.length; j++) ctx.lineTo(xFor(data[j].t), yFor(data[j].p));
+                                            ctx.lineWidth = window.s(2);
+                                            ctx.strokeStyle = window.batColorStart.toString();
+                                            ctx.lineJoin = "round";
+                                            ctx.stroke();
+                                        }
+                                    }
+                                }
+                            }
+
+
+                            // 1. POWER PROFILES DOCK
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: window.s(54)
+                                radius: window.s(14)
+                                color: window.surface0 
+                                border.color: window.surface1
+                                border.width: 1
+
+                                opacity: introProfiles
+                                transform: Translate { y: window.s(20) * (1.0 - introProfiles) }
+                                
+                                Rectangle {
+                                    id: sliderPill
+                                    width: (parent.width - window.s(2)) / 3 
+                                    height: parent.height - window.s(2)
+                                    y: window.s(1)
+                                    radius: window.s(10)
+                                    x: {
+                                        if (window.powerProfile === "performance") return window.s(1);
+                                        if (window.powerProfile === "balanced") return width + window.s(1);
+                                        return (width * 2) + window.s(1);
+                                    }
+                                    
+                                    Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
+                                    
+                                    gradient: Gradient {
+                                        orientation: Gradient.Horizontal
+                                        GradientStop { position: 0.0; color: window.profileStart; Behavior on color { ColorAnimation{duration:400} } }
+                                        GradientStop { position: 1.0; color: window.profileEnd; Behavior on color { ColorAnimation{duration:400} } }
+                                    }
+                                }
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    spacing: 0
+                                    
+                                    Repeater {
+                                        model: ListModel {
+                                            ListElement { name: "performance"; icon: "󰓅"; label: "Perform" } 
+                                            ListElement { name: "balanced"; icon: "󰗑"; label: "Balance" }   
+                                            ListElement { name: "power-saver"; icon: "󰌪"; label: "Saver" } 
+                                        }
+                                        
+                                        delegate: Item {
+                                            Layout.fillWidth: true
+                                            Layout.fillHeight: true
+                                            
+                                            RowLayout {
+                                                anchors.centerIn: parent
+                                                spacing: window.s(8)
+                                                Text {
+                                                    font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
+                                                    color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
+                                                    text: icon
+                                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                                }
+                                                Text {
+                                                    font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13)
+                                                    color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
+                                                    text: label
+                                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                                }
+                                            }
+                                            
+                                            MouseArea {
+                                                id: profileMa
+                                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                                onClicked: { Quickshell.execDetached(["powerprofilesctl", "set", name]); sysPoller.running = true; }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 2. HARDWARE CONTROLS DOCK (Sliders)
                             Rectangle {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: window.s(96)
@@ -1386,7 +1577,7 @@ Item {
                                 }
                             }
 
-                            // 2. SYSTEM ACTIONS DOCK
+                            // 3. SYSTEM ACTIONS DOCK
                             RowLayout {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: window.s(75)
@@ -1536,7 +1727,7 @@ Item {
 
                                         NumberAnimation {
                                             id: fillAnim; target: actionCapsule; property: "fillLevel"; to: 1.0
-                                            duration: (550 * weight) * (1.0 - actionCapsule.fillLevel); easing.type: Easing.InSine
+                                            duration: (300 * weight) * (1.0 - actionCapsule.fillLevel); easing.type: Easing.InSine
                                             onFinished: {
                                                 actionCapsule.triggered = true; actionCapsule.flashOpacity = 0.6; cardFlashAnim.start();
                                                 exitAnim.start(); exitTimer.start(); // Start graceful exit sequence
@@ -1551,81 +1742,6 @@ Item {
                                         Timer {
                                             id: exitTimer; interval: 500 
                                             onTriggered: { Quickshell.execDetached(["sh", "-c", cmd]); Quickshell.execDetached(["sh", "-c", "echo 'close' > " + paths.runDir + "/widget_state"]); }
-                                        }
-                                    }
-                                }
-                            }
-
-                            // 3. POWER PROFILES DOCK
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: window.s(54)
-                                radius: window.s(14)
-                                color: window.surface0 
-                                border.color: window.surface1
-                                border.width: 1
-
-                                opacity: introProfiles
-                                transform: Translate { y: window.s(20) * (1.0 - introProfiles) }
-                                
-                                Rectangle {
-                                    id: sliderPill
-                                    width: (parent.width - window.s(2)) / 3 
-                                    height: parent.height - window.s(2)
-                                    y: window.s(1)
-                                    radius: window.s(10)
-                                    x: {
-                                        if (window.powerProfile === "performance") return window.s(1);
-                                        if (window.powerProfile === "balanced") return width + window.s(1);
-                                        return (width * 2) + window.s(1);
-                                    }
-                                    
-                                    Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
-                                    
-                                    gradient: Gradient {
-                                        orientation: Gradient.Horizontal
-                                        GradientStop { position: 0.0; color: window.profileStart; Behavior on color { ColorAnimation{duration:400} } }
-                                        GradientStop { position: 1.0; color: window.profileEnd; Behavior on color { ColorAnimation{duration:400} } }
-                                    }
-                                }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    spacing: 0
-                                    
-                                    Repeater {
-                                        model: ListModel {
-                                            ListElement { name: "performance"; icon: "󰓅"; label: "Perform" } 
-                                            ListElement { name: "balanced"; icon: "󰗑"; label: "Balance" }   
-                                            ListElement { name: "power-saver"; icon: "󰌪"; label: "Saver" } 
-                                        }
-                                        
-                                        delegate: Item {
-                                            Layout.fillWidth: true
-                                            Layout.fillHeight: true
-                                            
-                                            RowLayout {
-                                                anchors.centerIn: parent
-                                                spacing: window.s(8)
-                                                Text {
-                                                    font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
-                                                    color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                                    text: icon
-                                                    Behavior on color { ColorAnimation { duration: 200 } }
-                                                }
-                                                Text {
-                                                    font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13)
-                                                    color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                                    text: label
-                                                    Behavior on color { ColorAnimation { duration: 200 } }
-                                                }
-                                            }
-                                            
-                                            MouseArea {
-                                                id: profileMa
-                                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                                onClicked: { Quickshell.execDetached(["powerprofilesctl", "set", name]); sysPoller.running = true; }
-                                            }
                                         }
                                     }
                                 }
