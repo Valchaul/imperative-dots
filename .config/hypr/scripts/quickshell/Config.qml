@@ -33,6 +33,13 @@ Item {
         Quickshell.execDetached(["bash", "-c", cmd]);
     }
 
+    // Bash snippet that restarts whichever wallpaper daemon is actually installed
+    // (swww or the awww fork) - resolved at run time rather than hardcoded, since
+    // this repo is shared and either could be present on a given machine.
+    function wallpaperRestartCmd() {
+        return 'W=$(command -v swww >/dev/null 2>&1 && echo swww || echo awww); "$W" kill; sleep 0.2; "${W}-daemon" &';
+    }
+
     // --- JSON Operations ---
     function getSetting(key, fallbackValue) {
         return rawSettings.hasOwnProperty(key) ? rawSettings[key] : fallbackValue;
@@ -84,6 +91,8 @@ Item {
     property real uiScale: 1.0
     property bool openGuideAtStartup: true
     property bool topbarHelpIcon: true
+    property bool topbarSystemMonitorIcon: true
+    property bool topbarSettingsIcon: true
     property int workspaceCount: 8
     property int initialWorkspaceCount: 8
     property string wallpaperDir: Quickshell.env("WALLPAPER_DIR") || (homeDir + "/Pictures/Wallpapers")
@@ -127,6 +136,8 @@ Item {
             "uiScale": config.uiScale,
             "openGuideAtStartup": config.openGuideAtStartup,
             "topbarHelpIcon": config.topbarHelpIcon,
+            "topbarSystemMonitorIcon": config.topbarSystemMonitorIcon,
+            "topbarSettingsIcon": config.topbarSettingsIcon,
             "wallpaperDir": config.wallpaperDir,
             "language": config.language,
             "kbOptions": config.kbOptions,
@@ -263,7 +274,7 @@ Item {
             if (m.transform !== 0) monitorStr += ",transform," + m.transform;
             let jsonArr = [{ name: m.name, resW: m.resW, resH: m.resH, rate: parseInt(m.rate), x: 0, y: 0, scale: m.sysScale, transform: m.transform }];
             config.setSetting("monitors", jsonArr);
-            config.sh("hyprctl keyword monitor " + monitorStr + " ; swww kill ; sleep 0.2 ; swww-daemon &");
+            config.sh("hyprctl keyword monitor " + monitorStr + " ; " + config.wallpaperRestartCmd());
             Quickshell.execDetached(["notify-send", "Display Update", "Applied: " + m.resW + "x" + m.resH + " @ " + m.rate + "Hz"]);
         } else {
             let rects = [];
@@ -313,7 +324,7 @@ Item {
                 jsonArr.push({ name: r.name, resW: r.resW, resH: r.resH, rate: parseInt(r.rate), x: r.x, y: r.y, scale: r.sysScale, transform: r.transform });
             }
             config.setSetting("monitors", jsonArr);
-            config.sh("hyprctl --batch '" + batchCmds.join(" ; ") + "' ; swww kill ; sleep 0.2 ; swww-daemon &");
+            config.sh("hyprctl --batch '" + batchCmds.join(" ; ") + "' ; " + config.wallpaperRestartCmd());
             Quickshell.execDetached(["notify-send", "Display Update", "Applied layout for: " + summaryString.trim()]);
         }
     }
@@ -408,6 +419,8 @@ Item {
                         if (config.rawSettings.uiScale !== undefined) config.uiScale = config.rawSettings.uiScale;
                         if (config.rawSettings.openGuideAtStartup !== undefined) config.openGuideAtStartup = config.rawSettings.openGuideAtStartup;
                         if (config.rawSettings.topbarHelpIcon !== undefined) config.topbarHelpIcon = config.rawSettings.topbarHelpIcon;
+                        if (config.rawSettings.topbarSystemMonitorIcon !== undefined) config.topbarSystemMonitorIcon = config.rawSettings.topbarSystemMonitorIcon;
+                        if (config.rawSettings.topbarSettingsIcon !== undefined) config.topbarSettingsIcon = config.rawSettings.topbarSettingsIcon;
                         if (config.rawSettings.wallpaperDir !== undefined) config.wallpaperDir = config.rawSettings.wallpaperDir;
                         if (config.rawSettings.language !== undefined && config.rawSettings.language !== "") config.language = config.rawSettings.language;
                         if (config.rawSettings.kbOptions !== undefined) config.kbOptions = config.rawSettings.kbOptions;

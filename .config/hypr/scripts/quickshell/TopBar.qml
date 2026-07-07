@@ -672,10 +672,18 @@ Variants {
                             property bool isHovered: settingsMouse.containsMouse
                             color: isHovered ? Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6) : "transparent"
                             radius: barWindow.s(10)
-                            height: parent.pillHeight; width: barWindow.s(34)
-                            
+
+                            property real targetWidth: Config.topbarSettingsIcon ? barWindow.s(34) : 0
+                            width: targetWidth
+                            height: parent.pillHeight
+                            visible: targetWidth > 0 || opacity > 0
+                            opacity: Config.topbarSettingsIcon ? 1.0 : 0.0
+                            clip: true
+
+                            Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on opacity { NumberAnimation { duration: 300 } }
                             Behavior on color { ColorAnimation { duration: 200 } }
-                            
+
                             Text {
                                 anchors.centerIn: parent
                                 text: ""
@@ -690,6 +698,39 @@ Variants {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle settings"])
+                            }
+                        }
+
+                        Rectangle {
+                            property bool isHovered: systemMonitorMouse.containsMouse
+                            color: isHovered ? Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6) : "transparent"
+                            radius: barWindow.s(10)
+
+                            property real targetWidth: Config.topbarSystemMonitorIcon ? barWindow.s(34) : 0
+                            width: targetWidth
+                            height: parent.pillHeight
+                            visible: targetWidth > 0 || opacity > 0
+                            opacity: Config.topbarSystemMonitorIcon ? 1.0 : 0.0
+                            clip: true
+
+                            Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }
+                            Behavior on opacity { NumberAnimation { duration: 300 } }
+                            Behavior on color { ColorAnimation { duration: 200 } }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: ""
+                                font.family: "Iosevka Nerd Font"; font.pixelSize: barWindow.s(20)
+                                color: parent.isHovered ? mocha.mauve : mocha.text
+                                Behavior on color { ColorAnimation { duration: 200 } }
+                                scale: parent.isHovered ? 1.15 : 1.0
+                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
+                            }
+                            MouseArea {
+                                id: systemMonitorMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle systemmonitor"])
                             }
                         }
 

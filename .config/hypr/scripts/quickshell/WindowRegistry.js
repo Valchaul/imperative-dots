@@ -35,7 +35,7 @@ function getLayout(name, mx, my, mw, mh, userScale) {
         "battery":   { w: s(520, scale), h: s(860, scale), rx: mw - s(524, scale), ry: s(60, scale), comp: "battery/BatteryPopup.qml" },
         "network":   { w: s(900, scale), h: s(700, scale), rx: mw - s(904, scale), ry: s(60, scale), comp: "network/NetworkPopup.qml" },
         "volume":    { w: s(450, scale), h: s(700, scale), rx: mw - s(455, scale), ry: s(60, scale), comp: "volume/VolumePopup.qml" },
-        "stats":     { w: s(700, scale), h: s(460, scale), rx: mw - s(705, scale), ry: s(60, scale), comp: "quickactions/StatsPopupLight.qml" },
+        "stats":     { w: s(700, scale), h: s(460, scale), rx: mw - s(705, scale), ry: s(60, scale), comp: "systemmonitor/StatsPopupLight.qml" },
         "notifications": { w: s(460, scale), h: s(720, scale), rx: mw - s(465, scale), ry: s(60, scale), comp: "notifications/NotificationCenterPopup.qml" },
 
         // --- Central Standard Tools ---
@@ -45,6 +45,7 @@ function getLayout(name, mx, my, mw, mh, userScale) {
 
         // --- Central Large Tools ---
         "focustime": { w: s(900, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(900, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "focustime/FocusTimePopup.qml" },
+        "systemmonitor": { w: s(850, scale), h: s(650, scale), rx: Math.floor((mw/2)-(s(850, scale)/2)), ry: Math.floor((mh/2)-(s(650, scale)/2)), comp: "systemmonitor/SystemMonitorPopup.qml" },
 
         // --- Extralarge / Custom Centered ---
         "guide":     { w: s(1200, scale), h: s(750, scale), rx: Math.floor((mw/2)-(s(1200, scale)/2)), ry: Math.floor((mh/2)-(s(750, scale)/2)), comp: "guide/GuidePopup.qml" },

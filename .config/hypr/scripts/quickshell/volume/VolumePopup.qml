@@ -213,7 +213,13 @@ Item {
         running: true
         stdout: SplitParser {
             onRead: (line) => {
-                if (line.indexOf("sink") !== -1 || line.indexOf("source") !== -1) {
+                // While dragging, our own throttled volume-set commands generate sink-change
+                // events here, which would otherwise re-trigger a full get_audio_state.py poll
+                // (multiple pactl/wpctl subprocesses + JSON parsing) on every one of them - a
+                // feedback loop that's discarded anyway (updateHeroData skips it while dragging).
+                // onReleased already forces one authoritative poll once the drag ends.
+                let isDragging = window.draggingMaster || Object.keys(window.draggingNodes).length > 0;
+                if (!isDragging && (line.indexOf("sink") !== -1 || line.indexOf("source") !== -1)) {
                     audioPollDebounce.restart();
                 }
             }
@@ -535,7 +541,10 @@ Item {
 
                                     Timer {
                                         id: masterCmdThrottle
-                                        interval: 50
+                                        // wpctl/pactl each pay a real PipeWire connection-setup cost per call
+                                        // (~8-10% CPU system-wide at 20Hz measured directly) independent of any
+                                        // QML cost, so this is throttled well below the 60fps visual update.
+                                        interval: 120
                                         property int targetPct: -1
                                         onTriggered: {
                                             if (targetPct >= 0) {
@@ -573,13 +582,31 @@ Item {
                                     MouseArea {
                                         id: masterSliderMa
                                         anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                        onPressed: (mouse) => { syncDelay.stop(); window.draggingMaster = true; updateVol(mouse.x); }
+                                        onPressed: (mouse) => { syncDelay.stop(); window.draggingMaster = true; updateVol(mouse.x); applyPending(); }
                                         onPositionChanged: (mouse) => { if (pressed) updateVol(mouse.x); }
-                                        onReleased: { syncDelay.restart(); audioPoller.running = true; }
-                                        
+                                        onReleased: { syncDelay.restart(); audioPoller.running = true; applyPending(); }
+
+                                        property int pendingPct: -1
+
+                                        // Raw pointer-move events can fire far more often than the display
+                                        // can render; only push into window.activeVol (which drives the Canvas
+                                        // wave repaint + both percentage labels) at most once per frame instead
+                                        // of once per input event.
+                                        Timer {
+                                            id: masterVisualThrottle
+                                            interval: 16
+                                            repeat: true
+                                            running: masterSliderMa.pressed
+                                            onTriggered: masterSliderMa.applyPending()
+                                        }
+
+                                        function applyPending() {
+                                            if (pendingPct >= 0 && pendingPct !== window.activeVol) window.activeVol = pendingPct;
+                                        }
+
                                         function updateVol(mx) {
                                             let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
-                                            window.activeVol = pct; // Instant visual feedback on orb
+                                            pendingPct = pct;
 
                                             masterCmdThrottle.targetPct = pct;
                                             if (!masterCmdThrottle.running) masterCmdThrottle.start();
@@ -841,7 +868,9 @@ Item {
                                         
                                         Timer {
                                             id: volCmdThrottle
-                                            interval: 50
+                                            // Same rationale as masterCmdThrottle: the pactl call itself, not
+                                            // QML, is the expensive part per invocation.
+                                            interval: 120
                                             property int targetPct: -1
                                             onTriggered: {
                                                 if (targetPct >= 0) {
@@ -884,20 +913,37 @@ Item {
                                         MouseArea {
                                             id: volSliderMa
                                             anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                            onPressed: (mouse) => { syncDelay.stop(); window.draggingNodes[model.id] = true; updateVol(mouse.x); }
+                                            onPressed: (mouse) => { syncDelay.stop(); window.draggingNodes[model.id] = true; updateVol(mouse.x); applyPending(); }
                                             onPositionChanged: (mouse) => { if (pressed) updateVol(mouse.x); }
-                                            onReleased: { syncDelay.restart(); audioPoller.running = true; }
-                                            
-                                            function updateVol(mx) {
-                                                let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
-                                                
+                                            onReleased: { syncDelay.restart(); audioPoller.running = true; applyPending(); }
+
+                                            property int pendingPct: -1
+
+                                            // Same rationale as the master slider: gate the list-model write
+                                            // (which triggers a delegate re-layout) to once per frame instead
+                                            // of once per raw pointer-move event.
+                                            Timer {
+                                                id: volVisualThrottle
+                                                interval: 16
+                                                repeat: true
+                                                running: volSliderMa.pressed
+                                                onTriggered: volSliderMa.applyPending()
+                                            }
+
+                                            function applyPending() {
+                                                if (pendingPct < 0) return;
                                                 let targetList = window.activeTab === "outputs" ? outputsModel : (window.activeTab === "inputs" ? inputsModel : appsModel);
                                                 for (let i = 0; i < targetList.count; i++) {
                                                     if (targetList.get(i).id === model.id) {
-                                                        targetList.setProperty(i, "volume", pct);
+                                                        if (targetList.get(i).volume !== pendingPct) targetList.setProperty(i, "volume", pendingPct);
                                                         break;
                                                     }
                                                 }
+                                            }
+
+                                            function updateVol(mx) {
+                                                let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
+                                                pendingPct = pct;
 
                                                 volCmdThrottle.targetPct = pct;
                                                 if (!volCmdThrottle.running) volCmdThrottle.start();

@@ -65,7 +65,8 @@ Item {
                         let apps = JSON.parse(this.text);
                         apps.unshift(
                             { name: "Guide", exec: "bash " + Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh toggle guide", icon: "", glyph: "󰋗" },
-                            { name: "Settings", exec: "bash " + Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh toggle settings", icon: "", glyph: "󰒓" }
+                            { name: "Settings", exec: "bash " + Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh toggle settings", icon: "", glyph: "󰒓" },
+                            { name: "System Monitor", exec: "bash " + Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh toggle systemmonitor", icon: "", glyph: "" }
                         );
                         window.allApps = apps;
                         filterApps("");

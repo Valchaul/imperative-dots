@@ -176,10 +176,17 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
     if [[ "$TARGET" == "wallpaper" ]]; then
         handle_wallpaper_prep
         CURRENT_SRC=""
+        WALLPAPER_BIN=""
+        if command -v swww >/dev/null 2>&1; then
+            WALLPAPER_BIN="swww"
+        elif command -v awww >/dev/null 2>&1; then
+            WALLPAPER_BIN="awww"
+        fi
+
         if pgrep -a "mpvpaper" > /dev/null; then
             CURRENT_SRC=$(pgrep -a mpvpaper | grep -o "$SRC_DIR/[^' ]*" | head -n1)
-        elif command -v swww >/dev/null; then
-            CURRENT_SRC=$(swww query 2>/dev/null | grep -o "$SRC_DIR/[^ ]*" | head -n1)
+        elif [ -n "$WALLPAPER_BIN" ]; then
+            CURRENT_SRC=$("$WALLPAPER_BIN" query 2>/dev/null | grep -o "$SRC_DIR/[^ ]*" | head -n1)
         fi
 
         TARGET_THUMB=""

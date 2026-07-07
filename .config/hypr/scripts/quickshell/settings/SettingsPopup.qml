@@ -3701,6 +3701,24 @@ Item {
 
                     ToggleBox {
                         theme: root; scaleFunc: root.s
+                        icon: ""; label: "Settings icon"; description: "Show button in topbar"
+                        accentColor: root.blue
+                        checked: Config.topbarSettingsIcon
+                        onToggled: Config.topbarSettingsIcon = !Config.topbarSettingsIcon
+                    }
+
+
+                    ToggleBox {
+                        theme: root; scaleFunc: root.s
+                        icon: ""; label: "System monitor icon"; description: "Show button in topbar"
+                        accentColor: root.mauve
+                        checked: Config.topbarSystemMonitorIcon
+                        onToggled: Config.topbarSystemMonitorIcon = !Config.topbarSystemMonitorIcon
+                    }
+
+
+                    ToggleBox {
+                        theme: root; scaleFunc: root.s
                         icon: "󰀻"; label: "System tray"; description: "App status icons in topbar"
                         accentColor: root.green
                         checked: Config.systemTrayEnabled
