@@ -3665,6 +3665,15 @@ Item {
 
                     ToggleBox {
                         theme: root; scaleFunc: root.s
+                        icon: ""; label: "CPU pill"; description: "Show CPU usage in topbar"
+                        accentColor: root.mauve
+                        checked: Config.cpuPillEnabled
+                        onToggled: Config.cpuPillEnabled = !Config.cpuPillEnabled
+                    }
+
+
+                    ToggleBox {
+                        theme: root; scaleFunc: root.s
                         icon: "󰖐"; label: "Weather pill"; description: "Show icon/temp in topbar"
                         accentColor: root.sapphire
                         checked: Config.weatherWidgetEnabled

@@ -35,7 +35,7 @@ function getLayout(name, mx, my, mw, mh, userScale) {
         "battery":   { w: s(520, scale), h: s(860, scale), rx: mw - s(524, scale), ry: s(60, scale), comp: "battery/BatteryPopup.qml" },
         "network":   { w: s(900, scale), h: s(700, scale), rx: mw - s(904, scale), ry: s(60, scale), comp: "network/NetworkPopup.qml" },
         "volume":    { w: s(450, scale), h: s(700, scale), rx: mw - s(455, scale), ry: s(60, scale), comp: "volume/VolumePopup.qml" },
-        "stats":     { w: s(700, scale), h: s(460, scale), rx: mw - s(705, scale), ry: s(60, scale), comp: "quickactions/StatsPopup.qml" },
+        "stats":     { w: s(700, scale), h: s(460, scale), rx: mw - s(705, scale), ry: s(60, scale), comp: "quickactions/StatsPopupLight.qml" },
         "notifications": { w: s(460, scale), h: s(720, scale), rx: mw - s(465, scale), ry: s(60, scale), comp: "notifications/NotificationCenterPopup.qml" },
 
         // --- Central Standard Tools ---

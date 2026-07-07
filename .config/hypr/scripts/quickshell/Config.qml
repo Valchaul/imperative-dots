@@ -105,6 +105,7 @@ Item {
     property int weatherCacheMinutes: 30
 
     property bool tempPillEnabled: true
+    property bool cpuPillEnabled: true
     property int statsRefreshSeconds: 2
     property bool weatherWidgetEnabled: true
     property bool batteryHistoryEnabled: true
@@ -139,6 +140,7 @@ Item {
             "quickActionsEnabled": config.quickActionsEnabled,
             "workspaceCount": config.workspaceCount,
             "tempPillEnabled": config.tempPillEnabled,
+            "cpuPillEnabled": config.cpuPillEnabled,
             "statsRefreshSeconds": config.statsRefreshSeconds,
             "weatherWidgetEnabled": config.weatherWidgetEnabled,
             "batteryHistoryEnabled": config.batteryHistoryEnabled,
@@ -422,6 +424,7 @@ Item {
                             config.initialWorkspaceCount = config.rawSettings.workspaceCount;
                         }
                         if (config.rawSettings.tempPillEnabled !== undefined) config.tempPillEnabled = config.rawSettings.tempPillEnabled;
+                        if (config.rawSettings.cpuPillEnabled !== undefined) config.cpuPillEnabled = config.rawSettings.cpuPillEnabled;
                         if (config.rawSettings.statsRefreshSeconds !== undefined) config.statsRefreshSeconds = config.rawSettings.statsRefreshSeconds;
                         if (config.rawSettings.weatherWidgetEnabled !== undefined) config.weatherWidgetEnabled = config.rawSettings.weatherWidgetEnabled;
                         if (config.rawSettings.batteryHistoryEnabled !== undefined) config.batteryHistoryEnabled = config.rawSettings.batteryHistoryEnabled;

@@ -60,7 +60,7 @@ Variants {
             // =========================================================
             property var tabModules: [
                 "quickactions/DrawAction.qml",
-		"quickactions/SystemUsage.qml",
+		"quickactions/SystemUsageLight.qml",
 		"quickactions/Timer.qml"
             ]
 
