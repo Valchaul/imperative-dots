@@ -102,27 +102,26 @@ Item {
     }
 
     property bool ignoreNextModeFileUpdate: false
-    Process {
-        id: modeReader
-        command: ["bash", "-c", "cat '" + window.modeFilePath + "' 2>/dev/null"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let mode = this.text.trim();
-                if ((mode === "wifi" || mode === "bt" || mode === "eth") && window.activeMode !== mode) {
-                    if ((mode === "eth" && window.ethPresent) || 
-                        (mode === "wifi" && window.wifiPresent) || 
-                        (mode === "bt" && window.btPresent)) {
-                        window.powerAnimAllowed = false;
-                        powerAnimBlocker.restart();
-                        window.ignoreNextModeFileUpdate = true;
-                        window.activeMode = mode;
-                    }
+    FileView {
+        id: modeFile
+        path: window.modeFilePath
+        watchChanges: true
+        preload: true
+        onFileChanged: reload()
+        onLoaded: {
+            let mode = text().trim();
+            if ((mode === "wifi" || mode === "bt" || mode === "eth") && window.activeMode !== mode) {
+                if ((mode === "eth" && window.ethPresent) ||
+                    (mode === "wifi" && window.wifiPresent) ||
+                    (mode === "bt" && window.btPresent)) {
+                    window.powerAnimAllowed = false;
+                    powerAnimBlocker.restart();
+                    window.ignoreNextModeFileUpdate = true;
+                    window.activeMode = mode;
                 }
             }
         }
     }
-
-    Timer { interval: 100; running: true; repeat: true; onTriggered: modeReader.running = true }
 
     Component.onCompleted: {
         window.powerAnimAllowed = false;
@@ -1812,25 +1811,25 @@ Item {
                                     color: "transparent"
                                     border.width: 1
                                     border.color: floatCard.isFailed ? window.red : window.surface2
-                                    visible: !isHighlighted && !locksList
+                                    visible: !floatCard.isHighlighted && !floatCard.locksList
                                     Behavior on border.color { ColorAnimation { duration: 300 } }
                                 }
 
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: window.s(14)
-                                    opacity: locksList || isHighlighted ? 1.0 : 0.0
+                                    opacity: floatCard.locksList || floatCard.isHighlighted ? 1.0 : 0.0
                                     color: "transparent"
-                                    border.width: isHighlighted && !locksList ? 1 : window.s(2)
+                                    border.width: floatCard.isHighlighted && !floatCard.locksList ? 1 : window.s(2)
                                     border.color: floatCard.isFailed ? window.red : "transparent"
                                     Behavior on opacity { NumberAnimation { duration: 250 } }
-                                    
+
                                     Rectangle {
                                         anchors.fill: parent
-                                        anchors.margins: isHighlighted && !locksList ? 1 : window.s(2)
+                                        anchors.margins: floatCard.isHighlighted && !floatCard.locksList ? 1 : window.s(2)
                                         radius: window.s(12)
                                         color: window.base
-                                        opacity: locksList ? 0.9 : 1.0
+                                        opacity: floatCard.locksList ? 0.9 : 1.0
                                     }
                                     
                                     gradient: Gradient {

@@ -64,16 +64,13 @@ PanelWindow {
 
     property bool dndEnabled: false
 
-    Process {
-        id: dndPoller
-        command: ["bash", "-c", "cat '" + paths.getCacheDir("dnd") + "/state' 2>/dev/null || echo '0'"]
-        stdout: StdioCollector {
-            onStreamFinished: popupWindow.dndEnabled = (this.text.trim() === "1")
-        }
-    }
-    Timer {
-        interval: 1000; running: true; repeat: true; triggeredOnStart: true
-        onTriggered: dndPoller.running = true
+    FileView {
+        id: dndFile
+        path: paths.getCacheDir("dnd") + "/state"
+        watchChanges: true
+        preload: true
+        onFileChanged: reload()
+        onLoaded: popupWindow.dndEnabled = (text().trim() === "1")
     }
 
     Item {
