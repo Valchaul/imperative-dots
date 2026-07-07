@@ -152,7 +152,7 @@ PanelWindow {
     property real targetW: 1
     property real targetH: 1
 
-    property real globalUiScale: 1.0
+    readonly property real globalUiScale: Config.uiScale
 
     // =========================================================
     // --- DAEMON: NOTIFICATION HANDLING
@@ -244,40 +244,6 @@ PanelWindow {
         onRemoveRequested: (uid) => masterWindow.removePopup(uid)
     }
     onGlobalUiScaleChanged: { handleNativeScreenChange(); }
-
-    Process {
-        id: settingsReader
-        command: ["bash", "-c", "cat ~/.config/hypr/settings.json 2>/dev/null || echo '{}'"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    if (this.text && this.text.trim().length > 0 && this.text.trim() !== "{}") {
-                        let parsed = JSON.parse(this.text);
-                        if (parsed.uiScale !== undefined && masterWindow.globalUiScale !== parsed.uiScale) {
-                            masterWindow.globalUiScale = parsed.uiScale;
-                        }
-                    }
-                } catch (e) {
-                    console.log("Error parsing settings.json in main.qml:", e);
-                }
-            }
-        }
-    }
-
-    Process {
-        id: settingsWatcher
-        command: ["bash", "-c", "while [ ! -f ~/.config/hypr/settings.json ]; do sleep 1; done; inotifywait -qq -e modify,close_write ~/.config/hypr/settings.json"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                settingsReader.running = false;
-                settingsReader.running = true;
-                settingsWatcher.running = false;
-                settingsWatcher.running = true;
-            }
-        }
-    }
 
     // =========================================================
     // --- LAYOUT CACHE

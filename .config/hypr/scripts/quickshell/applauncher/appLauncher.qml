@@ -62,7 +62,12 @@ Item {
             onStreamFinished: {
                 try {
                     if (this.text && this.text.trim().length > 0) {
-                        window.allApps = JSON.parse(this.text);
+                        let apps = JSON.parse(this.text);
+                        apps.unshift(
+                            { name: "Guide", exec: "bash " + Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh toggle guide", icon: "", glyph: "󰋗" },
+                            { name: "Settings", exec: "bash " + Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh toggle settings", icon: "", glyph: "󰒓" }
+                        );
+                        window.allApps = apps;
                         filterApps("");
                     }
                 } catch(e) {
@@ -500,12 +505,22 @@ Item {
                                     anchors.centerIn: parent
                                     width: window.s(24)
                                     height: window.s(24)
-                                    source: model.icon.startsWith("/") ? "file://" + model.icon : "image://icon/" + model.icon
+                                    visible: !model.glyph
+                                    source: model.glyph ? "" : (model.icon.startsWith("/") ? "file://" + model.icon : "image://icon/" + model.icon)
                                     sourceSize: Qt.size(64, 64)
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
                                     smooth: true
                                     mipmap: true
+                                }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    visible: !!model.glyph
+                                    text: model.glyph || ""
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: window.s(20)
+                                    color: window.mauve
                                 }
                                 
                                 // The Matugen Tint Overlay

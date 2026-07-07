@@ -73,15 +73,12 @@ Variants {
                 id: mocha
             }
 
-            property bool showHelpIcon: true
             property bool isRecording: false
             
             property bool updateAvailable: false
             property bool forceUpdateShow: false
             property bool isUpdateVisible: updateAvailable || forceUpdateShow
-            
-            property int workspaceCount: 8
-            
+
             property string activeWidget: ""
             property bool isSettingsOpen: activeWidget === "settings"
 
@@ -186,46 +183,6 @@ Variants {
 	        }
 	    }
 	                
-            Process {
-                id: settingsReader
-                command: ["bash", "-c", "cat ~/.config/hypr/settings.json 2>/dev/null || echo '{}'"]
-                running: true
-                stdout: StdioCollector {
-                    onStreamFinished: {
-                        try {
-                            if (this.text && this.text.trim().length > 0 && this.text.trim() !== "{}") {
-                                let parsed = JSON.parse(this.text);
-                                
-                                if (parsed.topbarHelpIcon !== undefined && barWindow.showHelpIcon !== parsed.topbarHelpIcon) {
-                                    barWindow.showHelpIcon = parsed.topbarHelpIcon;
-                                }
-                                
-                                if (parsed.workspaceCount !== undefined && barWindow.workspaceCount !== parsed.workspaceCount) {
-                                    barWindow.workspaceCount = parsed.workspaceCount;
-                                    wsDaemon.running = false;
-                                    wsDaemon.running = true;
-                                }
-                            }
-                        } catch (e) {}
-                    }
-                }
-            }
-
-            Process {
-                id: settingsWatcher
-                command: ["bash", "-c", "while [ ! -f ~/.config/hypr/settings.json ]; do sleep 1; done; inotifywait -qq -e modify,close_write ~/.config/hypr/settings.json"]
-                running: true
-                stdout: StdioCollector {
-                    onStreamFinished: {
-                        settingsReader.running = false;
-                        settingsReader.running = true;
-                        
-                        settingsWatcher.running = false;
-                        settingsWatcher.running = true;
-                    }
-                }
-            }
-            
             property bool isDesktop: false
             property string ethStatus: "Ethernet"
 
@@ -658,11 +615,11 @@ Variants {
                             color: isHovered ? Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6) : "transparent"
                             radius: barWindow.s(10)
                             
-                            property real targetWidth: barWindow.showHelpIcon ? barWindow.s(34) : 0
+                            property real targetWidth: Config.topbarHelpIcon ? barWindow.s(34) : 0
                             width: targetWidth
                             height: parent.pillHeight
                             visible: targetWidth > 0 || opacity > 0
-                            opacity: barWindow.showHelpIcon ? 1.0 : 0.0
+                            opacity: Config.topbarHelpIcon ? 1.0 : 0.0
                             clip: true
                             
                             Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutQuint } }

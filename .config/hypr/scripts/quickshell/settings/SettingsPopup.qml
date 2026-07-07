@@ -122,6 +122,19 @@ Item {
 
     property var tabLoaded: [false, false, false, false, false, false, false]
 
+    property string dotsVersion: "Loading..."
+    Process {
+        id: versionReader
+        command: ["bash", "-c", "source ~/.local/state/imperative-dots-version 2>/dev/null && echo $LOCAL_VERSION || echo 'Unknown'"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let out = this.text ? this.text.trim() : "";
+                if (out !== "") root.dotsVersion = out;
+            }
+        }
+    }
+
     function markTabLoaded(idx) {
         if (root.tabLoaded[idx]) return;
         let arr = root.tabLoaded.slice();
@@ -742,7 +755,7 @@ Item {
     }
 
     property var allSettingsCards: [
-        { tab: 0, boxIndex: 0, label: "Guide on startup",  desc: "Launch on login",        icon: "", color: "peach" },
+        { tab: 0, boxIndex: 0, label: "Guide on startup",  desc: "Launch on login",        icon: "󰋗", color: "peach" },
         { tab: 0, boxIndex: 1, label: "UI Scale",          desc: "Base size scalar",       icon: "󰘖", color: "sapphire" },
         { tab: 0, boxIndex: 2, label: "Keyboard layouts",  desc: "Matches hyprland.conf",  icon: "󰌌", color: "green" },
         { tab: 0, boxIndex: 3, label: "Layout shortcut",   desc: "Toggle combination",     icon: "󰯍", color: "teal" },
@@ -2042,10 +2055,10 @@ Item {
                 anchors.margins: root.s(20)
                 spacing: root.s(16)
 
-                // ── Sidebar (vertical tabs, mirrors Guide's nav) ─────────────
+                // ── Sidebar (vertical tabs) ─────────────
                 Rectangle {
                     Layout.fillHeight: true
-                    Layout.preferredWidth: root.s(190)
+                    Layout.preferredWidth: root.s(220)
                     radius: root.s(12)
                     color: Qt.alpha(root.surface0, 0.4)
                     border.color: root.surface1
@@ -2053,8 +2066,105 @@ Item {
 
                     ColumnLayout {
                         anchors.fill: parent
-                        anchors.margins: root.s(12)
-                        spacing: root.s(4)
+                        anchors.margins: root.s(15)
+                        spacing: root.s(10)
+
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.s(48)
+
+                            RowLayout {
+                                anchors.fill: parent
+                                spacing: root.s(10)
+
+                                Rectangle {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    width: root.s(32)
+                                    height: root.s(32)
+                                    radius: root.s(9)
+                                    color: root.mauve
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "󰣇"
+                                        font.family: "Iosevka Nerd Font"
+                                        font.pixelSize: root.s(17)
+                                        color: root.base
+                                    }
+                                }
+
+                                ColumnLayout {
+                                    Layout.alignment: Qt.AlignVCenter
+                                    spacing: root.s(2)
+                                    Text {
+                                        text: "Imperative"
+                                        font.family: "JetBrains Mono"
+                                        font.weight: Font.Black
+                                        font.pixelSize: root.s(14)
+                                        color: root.text
+                                        Layout.alignment: Qt.AlignLeft
+                                    }
+                                    Text {
+                                        text: "v" + (root.dotsVersion !== "Loading..." ? root.dotsVersion : "...")
+                                        font.family: "JetBrains Mono"
+                                        font.pixelSize: root.s(10)
+                                        color: root.subtext0
+                                        Layout.alignment: Qt.AlignLeft
+                                    }
+                                }
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Qt.alpha(root.surface1, 0.5)
+                        }
+
+                        Rectangle {
+                            id: guideButton
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: root.s(44)
+                            radius: root.s(8)
+                            color: guideMa.containsMouse ? Qt.alpha(root.surface1, 0.5) : Qt.alpha(root.surface1, 0.25)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: root.s(15)
+                                spacing: root.s(12)
+
+                                Item {
+                                    Layout.preferredWidth: root.s(24)
+                                    Layout.alignment: Qt.AlignVCenter
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "󰋗"
+                                        font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                        color: root.subtext0
+                                    }
+                                }
+                                Text {
+                                    text: "Guide"
+                                    font.family: "JetBrains Mono"; font.weight: Font.Medium; font.pixelSize: root.s(13)
+                                    color: root.subtext0
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            MouseArea {
+                                id: guideMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle guide"])
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            height: 1
+                            color: Qt.alpha(root.surface1, 0.5)
+                        }
 
                         Item {
                             Layout.fillWidth: true
@@ -2063,7 +2173,7 @@ Item {
                             Rectangle {
                                 id: settingsActiveHighlight
                                 width: parent.width
-                                height: root.s(40)
+                                height: root.s(44)
                                 radius: root.s(8)
                                 color: root.mauve
                                 z: 0
@@ -2073,13 +2183,13 @@ Item {
 
                             Column {
                                 anchors.fill: parent
-                                spacing: root.s(4)
+                                spacing: 0
 
                                 Repeater {
                                     model: root.tabNames.length
                                     Rectangle {
                                         width: parent.width
-                                        height: root.s(40)
+                                        height: root.s(44)
                                         radius: root.s(8)
                                         z: 1
                                         property bool isActive: root.currentTab === index
@@ -2088,24 +2198,28 @@ Item {
 
                                         RowLayout {
                                             anchors.fill: parent
-                                            anchors.leftMargin: root.s(14)
-                                            anchors.rightMargin: root.s(10)
-                                            spacing: root.s(10)
+                                            anchors.leftMargin: root.s(15)
+                                            spacing: root.s(12)
                                             property real contentShift: 0
                                             Behavior on contentShift { NumberAnimation { duration: 400; easing.type: Easing.OutExpo } }
                                             transform: Translate { x: contentShift }
 
-                                            Text {
-                                                text: root.tabIcons[index]
-                                                font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16)
-                                                color: isActive ? "black" : root.subtext0
-                                                Behavior on color { ColorAnimation { duration: 150 } }
+                                            Item {
+                                                Layout.preferredWidth: root.s(24)
+                                                Layout.alignment: Qt.AlignVCenter
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: root.tabIcons[index]
+                                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                                    color: isActive ? "black" : root.subtext0
+                                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                                }
                                             }
                                             Text {
                                                 text: root.tabNames[index]
                                                 font.family: "JetBrains Mono"
                                                 font.weight: Font.Medium
-                                                font.pixelSize: root.s(12)
+                                                font.pixelSize: root.s(13)
                                                 color: isActive ? "black" : root.subtext0
                                                 Layout.fillWidth: true
                                                 elide: Text.ElideRight
@@ -2894,7 +3008,9 @@ Item {
 
                     Item {
                         id: singleMonPreview
-                        anchors.centerIn: parent
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        anchors.verticalCenter: parent.verticalCenter
+                        anchors.verticalCenterOffset: root.s(16)
                         width: root.s(270)
                         height: root.s(200)
 
@@ -3283,9 +3399,9 @@ Item {
                     }
                 }
 
-                // ── Rotation Dial + Refresh Rate Slider ─────────────────────
+                // ── Rotation Dial ─────────────────────────────────────────────
                 RowLayout {
-                    Layout.fillWidth: true
+                    Layout.alignment: Qt.AlignHCenter
                     spacing: root.s(16)
 
                     // Rotation dial
@@ -3368,113 +3484,161 @@ Item {
                         }
                     }
 
-                    // Refresh rate slider
+                    // Rotation label
                     ColumnLayout {
-                        Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                         spacing: root.s(6)
 
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Text {
-                                text: "Refresh Rate"
-                                font.family: "JetBrains Mono"; font.pixelSize: root.s(11)
-                                color: root.subtext0; Layout.fillWidth: true
+                        Text {
+                            text: "Rotation"
+                            font.family: "JetBrains Mono"; font.pixelSize: root.s(11)
+                            color: root.subtext0
+                        }
+                        Text {
+                            text: root.monCurrentTransform * 90 + "°"
+                            font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(20)
+                            color: root.monSelectedResAccent
+                            Behavior on color { ColorAnimation { duration: 300 } }
+                        }
+                    }
+                }
+
+                // ── Refresh Rate (own row) ──────────────────────────────────
+                Rectangle {
+                    id: refreshRateBox
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: refreshRateCol.implicitHeight + root.s(32)
+                    radius: root.s(12)
+                    color: root.surface0
+                    border.color: root.surface1
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: refreshRateCol
+                        anchors.fill: parent
+                        anchors.margins: root.s(16)
+                        spacing: root.s(6)
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Text {
+                            text: "Refresh Rate"
+                            font.family: "JetBrains Mono"; font.pixelSize: root.s(11)
+                            color: root.subtext0; Layout.fillWidth: true
+                        }
+                        Text {
+                            text: {
+                                let _ = root.monChangeTrigger;
+                                if (Config.monitorsModel.count === 0) return "—";
+                                if (rateSlider.numRates > 0) return rateSlider.rates[rateSlider.curIdx] + " Hz";
+                                return Math.round(parseFloat(Config.monitorsModel.get(Config.monActiveEditIndex).rate) || 60) + " Hz";
                             }
-                            Text {
-                                text: {
-                                    let _ = root.monChangeTrigger;
-                                    if (Config.monitorsModel.count === 0) return "—";
-                                    if (rateSlider.numRates > 0) return rateSlider.rates[rateSlider.curIdx] + " Hz";
-                                    return Math.round(parseFloat(Config.monitorsModel.get(Config.monActiveEditIndex).rate) || 60) + " Hz";
-                                }
-                                font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13)
+                            font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13)
+                            color: root.monSelectedRateAccent
+                            Behavior on color { ColorAnimation { duration: 200 } }
+                        }
+                    }
+
+                    Item {
+                        id: rateSlider
+                        Layout.fillWidth: true
+                        property var rates: root.monAvailableRates
+                        property int numRates: rates ? rates.length : 0
+                        Layout.preferredHeight: numRates > 1 ? root.s(50) : 0
+                        opacity: numRates > 1 ? 1.0 : 0.0
+                        visible: Layout.preferredHeight > 0
+                        clip: true
+                        Behavior on Layout.preferredHeight { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
+                        Behavior on opacity { NumberAnimation { duration: 200 } }
+
+                        property int curIdx: {
+                            let _ = root.monChangeTrigger;
+                            if (Config.monitorsModel.count === 0 || numRates === 0) return 0;
+                            let rawRate = Config.monitorsModel.get(Config.monActiveEditIndex).rate;
+                            let val = Math.round(parseFloat(rawRate));
+                            if (isNaN(val)) val = rates[rates.length - 1];
+                            let best = 0, minDiff = 99999;
+                            for (let i = 0; i < numRates; i++) {
+                                let diff = Math.abs(rates[i] - val);
+                                if (diff < minDiff) { minDiff = diff; best = i; }
+                            }
+                            return best;
+                        }
+                        property real tLeft: root.s(8)
+                        property real tW: Math.max(1, width - root.s(16))
+                        property real knobX: numRates <= 1 ? tLeft : tLeft + (curIdx / (numRates - 1)) * tW
+
+                        Rectangle {
+                            id: rTrack
+                            x: rateSlider.tLeft; width: rateSlider.tW
+                            y: root.s(8); height: root.s(6); radius: root.s(3)
+                            color: root.mantle; border.color: root.surface1; border.width: 1
+
+                            Rectangle {
+                                width: Math.max(0, rKnob.x - rateSlider.tLeft + rKnob.width / 2)
+                                height: parent.height; radius: parent.radius
                                 color: root.monSelectedRateAccent
                                 Behavior on color { ColorAnimation { duration: 200 } }
                             }
                         }
-
-                        Item {
-                            id: rateSlider
-                            Layout.fillWidth: true
-                            property var rates: root.monAvailableRates
-                            property int numRates: rates ? rates.length : 0
-                            Layout.preferredHeight: numRates > 1 ? root.s(50) : 0
-                            opacity: numRates > 1 ? 1.0 : 0.0
-                            visible: Layout.preferredHeight > 0
-                            clip: true
-                            Behavior on Layout.preferredHeight { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
-                            Behavior on opacity { NumberAnimation { duration: 200 } }
-
-                            property int curIdx: {
-                                let _ = root.monChangeTrigger;
-                                if (Config.monitorsModel.count === 0 || numRates === 0) return 0;
-                                let rawRate = Config.monitorsModel.get(Config.monActiveEditIndex).rate;
-                                let val = Math.round(parseFloat(rawRate));
-                                if (isNaN(val)) val = rates[rates.length - 1];
-                                let best = 0, minDiff = 99999;
-                                for (let i = 0; i < numRates; i++) {
-                                    let diff = Math.abs(rates[i] - val);
-                                    if (diff < minDiff) { minDiff = diff; best = i; }
-                                }
-                                return best;
-                            }
-                            property real tLeft: root.s(8)
-                            property real tW: Math.max(1, width - root.s(16))
-                            property real knobX: numRates <= 1 ? tLeft : tLeft + (curIdx / (numRates - 1)) * tW
-
-                            Rectangle {
-                                id: rTrack
-                                x: rateSlider.tLeft; width: rateSlider.tW
-                                y: root.s(8); height: root.s(6); radius: root.s(3)
-                                color: root.mantle; border.color: root.surface1; border.width: 1
-
-                                Rectangle {
-                                    width: Math.max(0, rKnob.x - rateSlider.tLeft + rKnob.width / 2)
-                                    height: parent.height; radius: parent.radius
-                                    color: root.monSelectedRateAccent
+                        Rectangle {
+                            id: rKnob
+                            width: root.s(16); height: root.s(16); radius: root.s(8)
+                            color: rateMa.containsPress ? root.monSelectedRateAccent : root.text
+                            y: rTrack.y + rTrack.height / 2 - height / 2
+                            x: rateSlider.knobX - width / 2
+                            Behavior on x { enabled: !rateMa.pressed; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                        }
+                        Repeater {
+                            model: rateSlider.numRates
+                            Item {
+                                x: rateSlider.numRates <= 1 ? rateSlider.tLeft : rateSlider.tLeft + (index / (rateSlider.numRates - 1)) * rateSlider.tW
+                                y: rTrack.y + rTrack.height + root.s(3)
+                                Rectangle { anchors.horizontalCenter: parent.horizontalCenter; width: root.s(1); height: root.s(3); color: rateSlider.curIdx === index ? root.monSelectedRateAccent : root.overlay0 }
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter; y: root.s(4)
+                                    text: rateSlider.rates[index]
+                                    font.family: "JetBrains Mono"; font.pixelSize: root.s(8)
+                                    font.weight: rateSlider.curIdx === index ? Font.Bold : Font.Normal
+                                    color: rateSlider.curIdx === index ? root.monSelectedRateAccent : root.overlay0
                                     Behavior on color { ColorAnimation { duration: 200 } }
                                 }
                             }
-                            Rectangle {
-                                id: rKnob
-                                width: root.s(16); height: root.s(16); radius: root.s(8)
-                                color: rateMa.containsPress ? root.monSelectedRateAccent : root.text
-                                y: rTrack.y + rTrack.height / 2 - height / 2
-                                x: rateSlider.knobX - width / 2
-                                Behavior on x { enabled: !rateMa.pressed; NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                            }
-                            Repeater {
-                                model: rateSlider.numRates
-                                Item {
-                                    x: rateSlider.numRates <= 1 ? rateSlider.tLeft : rateSlider.tLeft + (index / (rateSlider.numRates - 1)) * rateSlider.tW
-                                    y: rTrack.y + rTrack.height + root.s(3)
-                                    Rectangle { anchors.horizontalCenter: parent.horizontalCenter; width: root.s(1); height: root.s(3); color: rateSlider.curIdx === index ? root.monSelectedRateAccent : root.overlay0 }
-                                    Text {
-                                        anchors.horizontalCenter: parent.horizontalCenter; y: root.s(4)
-                                        text: rateSlider.rates[index]
-                                        font.family: "JetBrains Mono"; font.pixelSize: root.s(8)
-                                        font.weight: rateSlider.curIdx === index ? Font.Bold : Font.Normal
-                                        color: rateSlider.curIdx === index ? root.monSelectedRateAccent : root.overlay0
-                                        Behavior on color { ColorAnimation { duration: 200 } }
-                                    }
-                                }
-                            }
-                            MouseArea {
-                                id: rateMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                function doSnap(mx) {
-                                    if (Config.monitorsModel.count === 0 || rateSlider.numRates === 0) return;
-                                    let pct = (mx - rateSlider.tLeft) / rateSlider.tW;
-                                    pct = Math.max(0, Math.min(1, pct));
-                                    let idx = Math.round(pct * (rateSlider.numRates - 1));
-                                    Config.monitorsModel.setProperty(Config.monActiveEditIndex, "rate", rateSlider.rates[idx].toString());
-                                    root.monChangeTrigger++;
-                                }
-                                onPressed: (mouse) => doSnap(mouse.x)
-                                onPositionChanged: (mouse) => { if (pressed) doSnap(mouse.x) }
-                            }
                         }
+                        MouseArea {
+                            id: rateMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            function doSnap(mx) {
+                                if (Config.monitorsModel.count === 0 || rateSlider.numRates === 0) return;
+                                let pct = (mx - rateSlider.tLeft) / rateSlider.tW;
+                                pct = Math.max(0, Math.min(1, pct));
+                                let idx = Math.round(pct * (rateSlider.numRates - 1));
+                                Config.monitorsModel.setProperty(Config.monActiveEditIndex, "rate", rateSlider.rates[idx].toString());
+                                root.monChangeTrigger++;
+                            }
+                            onPressed: (mouse) => doSnap(mouse.x)
+                            onPositionChanged: (mouse) => { if (pressed) doSnap(mouse.x) }
+                        }
+                    }
+                    }
+                }
+
+                // ── Monitor Scale ────────────────────────────────────────────
+                StepperBox {
+                    theme: root; scaleFunc: root.s
+                    icon: "󰍹"; label: "Monitor Scale"; description: "Per-display scale factor (applies on Enter)"
+                    accentColor: root.monSelectedResAccent
+                    value: {
+                        let _ = root.monChangeTrigger;
+                        return Config.monitorsModel.count > 0 ? Config.monitorsModel.get(Config.monActiveEditIndex).sysScale : 1.0;
+                    }
+                    minValue: 0.5; maxValue: 3.0; stepSize: 0.05
+                    decimals: 2; unit: "x"; signedDisplay: false
+                    onChanged: (v) => {
+                        if (Config.monitorsModel.count === 0) return;
+                        Config.monitorsModel.setProperty(Config.monActiveEditIndex, "sysScale", v);
+                        root.monChangeTrigger++;
+                        Config.monDelayedLayoutUpdate.restart();
                     }
                 }
 
