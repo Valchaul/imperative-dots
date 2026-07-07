@@ -27,7 +27,7 @@ Item {
             id: statsLoader
             anchors.fill: parent
             anchors.margins: window.s(20)
-            source: "SystemUsageLight.qml"
+            source: "../quickactions/SystemUsageLight.qml"
 
             // Ambient properties SystemUsage.qml reads from its hosting Loader
             // (same contract Floating.qml's Loader fulfills for the sidebar widget).
