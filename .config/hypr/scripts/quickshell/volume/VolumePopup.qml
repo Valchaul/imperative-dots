@@ -106,6 +106,7 @@ Item {
 
     Component.onCompleted: {
         if (cache.lastAudioJson !== "") processAudioJson(cache.lastAudioJson);
+        audioPoller.running = true;
     }
 
     function processAudioJson(textData) {
@@ -192,7 +193,6 @@ Item {
     Process {
         id: audioPoller
         command: ["python3", window.scriptsDir + "/get_audio_state.py"]
-        running: true
         stdout: StdioCollector {
             onStreamFinished: {
                 cache.lastAudioJson = this.text.trim();
@@ -202,8 +202,29 @@ Item {
     }
 
     Timer {
-        interval: 1000; running: true; repeat: true; triggeredOnStart: true;
+        id: audioPollDebounce
+        interval: 80
         onTriggered: audioPoller.running = true
+    }
+
+    Process {
+        id: audioSubscriber
+        command: ["pactl", "subscribe"]
+        running: true
+        stdout: SplitParser {
+            onRead: (line) => {
+                if (line.indexOf("sink") !== -1 || line.indexOf("source") !== -1) {
+                    audioPollDebounce.restart();
+                }
+            }
+        }
+        onExited: audioSubscriberRestart.start()
+    }
+
+    Timer {
+        id: audioSubscriberRestart
+        interval: 500
+        onTriggered: audioSubscriber.running = true
     }
 
     // -------------------------------------------------------------------------
