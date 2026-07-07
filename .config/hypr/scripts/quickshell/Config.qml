@@ -108,6 +108,18 @@ Item {
     property bool naturalScrollEnabled: true
     property bool quickActionsEnabled: true
 
+    // Consumed by settings_watcher.sh to regenerate hypridle.conf from its
+    // template; hypridle itself is restarted (not hyprctl-reloaded) whenever
+    // that file's content actually changes.
+    property int lockTimeoutMinutes: 10
+    property int suspendTimeoutMinutes: 20
+
+    // Last path applied via the General tab's "Login wallpaper" action.
+    // Purely a UI convenience (remembers the field's contents) - the actual
+    // copy into the SDDM theme happens immediately via pkexec, not through
+    // settings_watcher.sh, since SDDM has no live-reload mechanism at all.
+    property string sddmWallpaperPath: ""
+
     property string weatherUnit: "metric"
     property string weatherApiKey: ""
     property string weatherCityId: ""
@@ -149,6 +161,9 @@ Item {
             "animationsEnabled": config.animationsEnabled,
             "naturalScrollEnabled": config.naturalScrollEnabled,
             "quickActionsEnabled": config.quickActionsEnabled,
+            "lockTimeoutMinutes": config.lockTimeoutMinutes,
+            "suspendTimeoutMinutes": config.suspendTimeoutMinutes,
+            "sddmWallpaperPath": config.sddmWallpaperPath,
             "workspaceCount": config.workspaceCount,
             "tempPillEnabled": config.tempPillEnabled,
             "cpuPillEnabled": config.cpuPillEnabled,
@@ -432,6 +447,9 @@ Item {
                         if (config.rawSettings.animationsEnabled !== undefined) config.animationsEnabled = config.rawSettings.animationsEnabled;
                         if (config.rawSettings.naturalScrollEnabled !== undefined) config.naturalScrollEnabled = config.rawSettings.naturalScrollEnabled;
                         if (config.rawSettings.quickActionsEnabled !== undefined) config.quickActionsEnabled = config.rawSettings.quickActionsEnabled;
+                        if (config.rawSettings.lockTimeoutMinutes !== undefined) config.lockTimeoutMinutes = config.rawSettings.lockTimeoutMinutes;
+                        if (config.rawSettings.suspendTimeoutMinutes !== undefined) config.suspendTimeoutMinutes = config.rawSettings.suspendTimeoutMinutes;
+                        if (config.rawSettings.sddmWallpaperPath !== undefined) config.sddmWallpaperPath = config.rawSettings.sddmWallpaperPath;
                         if (config.rawSettings.workspaceCount !== undefined) {
                             config.workspaceCount = config.rawSettings.workspaceCount;
                             config.initialWorkspaceCount = config.rawSettings.workspaceCount;

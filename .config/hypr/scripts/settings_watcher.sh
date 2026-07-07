@@ -13,6 +13,7 @@ AUTOSTART_CONF="$CONF_DIR/autostart.conf"
 ENV_CONF="$CONF_DIR/env.conf"
 KEYBINDS_CONF="$CONF_DIR/keybindings.conf"
 MONITORS_CONF="$CONF_DIR/monitors.conf"
+HYPRIDLE_CONF="$HOME/.config/hypr/hypridle.conf"
 ZSH_RC="$HOME/.zshrc"
 
 # Ensure the required files and directories exist
@@ -29,6 +30,7 @@ compile_settings() {
     # This means a pure uiScale/wallpaperDir/weatherApiKey write never triggers a reload.
     OLD_NONMON_HASH=$(md5sum "$SETTINGS_CONF" "$KEYBINDS_CONF" "$AUTOSTART_CONF" "$ENV_CONF" 2>/dev/null | md5sum)
     OLD_MON_HASH=$(md5sum "$MONITORS_CONF" 2>/dev/null | md5sum)
+    OLD_HYPRIDLE_HASH=$(md5sum "$HYPRIDLE_CONF" 2>/dev/null | md5sum)
 
     # Read state from JSON (Using 'has' to safely parse booleans)
     LANG=$(jq -r '.language // "us"' "$SETTINGS_FILE")
@@ -44,6 +46,11 @@ compile_settings() {
 
     # Safely parse booleans so "false" doesn't trigger a fallback
     GUIDE_STARTUP=$(jq -r 'if has("openGuideAtStartup") then .openGuideAtStartup else true end' "$SETTINGS_FILE")
+
+    LOCK_TIMEOUT_MIN=$(jq -r '.lockTimeoutMinutes // 10' "$SETTINGS_FILE")
+    SUSPEND_TIMEOUT_MIN=$(jq -r '.suspendTimeoutMinutes // 20' "$SETTINGS_FILE")
+    LOCK_TIMEOUT_SEC=$((LOCK_TIMEOUT_MIN * 60))
+    SUSPEND_TIMEOUT_SEC=$((SUSPEND_TIMEOUT_MIN * 60))
 
     PIC_DIR="$(xdg-user-dir PICTURES 2>/dev/null || echo "$HOME/Pictures")"
     VID_DIR="$(xdg-user-dir VIDEOS 2>/dev/null || echo "$HOME/Videos")"
@@ -114,9 +121,24 @@ compile_settings() {
         echo "monitor = , preferred, auto, 1" >> "$MONITORS_CONF"
     fi
 
+    # 6. Regenerate hypridle.conf
+    echo "Regenerating hypridle.conf..."
+    sed -e "s|{{LOCK_TIMEOUT_SEC}}|$LOCK_TIMEOUT_SEC|g" \
+        -e "s|{{SUSPEND_TIMEOUT_SEC}}|$SUSPEND_TIMEOUT_SEC|g" \
+        "$TMPL_DIR/hypridle.conf.template" > "$HYPRIDLE_CONF"
+
     # Hash after changes
     NEW_NONMON_HASH=$(md5sum "$SETTINGS_CONF" "$KEYBINDS_CONF" "$AUTOSTART_CONF" "$ENV_CONF" 2>/dev/null | md5sum)
     NEW_MON_HASH=$(md5sum "$MONITORS_CONF" 2>/dev/null | md5sum)
+    NEW_HYPRIDLE_HASH=$(md5sum "$HYPRIDLE_CONF" 2>/dev/null | md5sum)
+
+    # hypridle has no hyprctl-reload equivalent - it only reads its config at
+    # startup, so picking up a new timeout means killing and relaunching it.
+    if [ "$OLD_HYPRIDLE_HASH" != "$NEW_HYPRIDLE_HASH" ]; then
+        echo "hypridle.conf changed, restarting hypridle..."
+        pkill -x hypridle
+        (hypridle &disown)
+    fi
 
     if [ "$OLD_MON_HASH" != "$NEW_MON_HASH" ]; then
         # Monitor layout actually changed — full reload needed

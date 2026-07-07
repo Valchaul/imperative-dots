@@ -19,16 +19,16 @@ Item {
     // --- Lifecycle Management ---
     property int subscribers: 0
     
-    function subscribe() { 
-        subscribers++; 
+    function subscribe() {
+        subscribers++;
         if (subscribers === 1) {
             fetchTimer.restart();
             fetchProc.running = true; // Fetch immediately on first open
         }
     }
-    
-    function unsubscribe() { 
-        subscribers = Math.max(0, subscribers - 1); 
+
+    function unsubscribe() {
+        subscribers = Math.max(0, subscribers - 1);
         if (subscribers === 0) {
             fetchTimer.stop();
             fetchProc.running = false;

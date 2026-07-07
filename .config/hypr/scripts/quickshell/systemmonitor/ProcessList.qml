@@ -17,6 +17,7 @@ Item {
     property color cRed: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.red : "#f38ba8"
 
     property bool active: parent !== null && parent.visible !== undefined ? parent.visible : true
+    property int totalCount: 0
 
     ListModel { id: processModel }
 
@@ -31,15 +32,17 @@ Item {
 
     Process {
         id: fetchProc
-        command: ["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/systemmonitor/process_fetch.sh"]
+        command: ["python3", Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/systemmonitor/process_fetch.py"]
         stdout: StdioCollector {
             onStreamFinished: {
                 let text = this.text ? this.text.trim() : "";
                 if (!text) return;
 
                 let lines = text.split("\n");
+                root.totalCount = parseInt(lines[0]) || 0;
+
                 let newData = [];
-                for (let i = 0; i < lines.length; i++) {
+                for (let i = 1; i < lines.length; i++) {
                     let parts = lines[i].split("");
                     if (parts.length < 5) continue;
                     newData.push({
@@ -71,6 +74,12 @@ Item {
         anchors.fill: parent
         spacing: root.s(6)
 
+        Text {
+            Layout.leftMargin: root.s(12)
+            text: root.totalCount > 80 ? (root.totalCount + " processes (showing top 80)") : (root.totalCount + " processes")
+            font.family: "JetBrains Mono"; font.pixelSize: root.s(11); color: root.cSubtext0
+        }
+
         // Header row
         RowLayout {
             Layout.fillWidth: true
@@ -82,7 +91,7 @@ Item {
             Text { text: "NAME"; Layout.fillWidth: true; font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(11); color: root.cSubtext0 }
             Text { text: "CPU%"; Layout.preferredWidth: root.s(65); horizontalAlignment: Text.AlignRight; font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(11); color: root.cSubtext0 }
             Text { text: "CORE%"; Layout.preferredWidth: root.s(65); horizontalAlignment: Text.AlignRight; font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(11); color: root.cSubtext0 }
-            Text { text: "MEM%"; Layout.preferredWidth: root.s(65); horizontalAlignment: Text.AlignRight; font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(11); color: root.cSubtext0 }
+            Text { text: "MEM(MB)"; Layout.preferredWidth: root.s(75); horizontalAlignment: Text.AlignRight; font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(11); color: root.cSubtext0 }
         }
 
         Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: root.cSurface1 }
@@ -133,8 +142,8 @@ Item {
                         color: model.core >= 100 ? root.cRed : root.cSubtext0
                     }
                     Text {
-                        text: model.mem.toFixed(1)
-                        Layout.preferredWidth: root.s(65)
+                        text: model.mem.toFixed(0)
+                        Layout.preferredWidth: root.s(75)
                         horizontalAlignment: Text.AlignRight
                         font.family: "JetBrains Mono"; font.pixelSize: root.s(12); color: root.cSubtext0
                     }

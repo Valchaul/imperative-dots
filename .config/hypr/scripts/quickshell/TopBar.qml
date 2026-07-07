@@ -16,14 +16,32 @@ Variants {
             
 	    Caching { id: paths }
 
+	    // Only the CPU pill and temp pill actually read SysData - if both are
+	    // disabled, there's no reason to keep sys_fetcher.sh polling for a
+	    // subscriber that displays nothing.
+	    property bool sysDataNeeded: Config.cpuPillEnabled || Config.tempPillEnabled
+	    property bool sysDataSubscribed: false
+
+	    function updateSysDataSubscription() {
+	        if (sysDataNeeded && !sysDataSubscribed) {
+	            SysData.subscribe();
+	            sysDataSubscribed = true;
+	        } else if (!sysDataNeeded && sysDataSubscribed) {
+	            SysData.unsubscribe();
+	            sysDataSubscribed = false;
+	        }
+	    }
+
+	    onSysDataNeededChanged: updateSysDataSubscription()
+
 	    Component.onCompleted: {
  	        console.log("runDir:", paths.runDir)
  	        console.log("manual path:", paths.runDir + "/workspaces")
  	        console.log("env test:", Quickshell.env("QS_RUN_WORKSPACES"))
  	        console.log("wsPath:", paths.getRunDir("workspaces"))
- 	        SysData.subscribe()
+ 	        updateSysDataSubscription()
 	    }
-            Component.onDestruction: SysData.unsubscribe()
+            Component.onDestruction: if (sysDataSubscribed) SysData.unsubscribe()
 
             IpcHandler {
                 target: "topbar"

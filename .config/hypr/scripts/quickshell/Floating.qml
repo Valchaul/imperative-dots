@@ -924,6 +924,7 @@ Variants {
                                 anchors.leftMargin: floatingWidget.s(15)
                                 anchors.rightMargin: floatingWidget.s(15)
 
+                                active: index === floatingWidget.activeIndex
                                 visible: index === floatingWidget.activeIndex && floatingWidget.expandProgress > 0.01
                                 source: modelData
                                 asynchronous: false

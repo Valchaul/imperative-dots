@@ -116,11 +116,11 @@ Item {
     }
 
     property int currentTab: 0
-    property var tabNames: ["General", "Weather", "Keybinds", "Monitors", "Startup", "Top bar", "Hyprland"]
-    property var tabIcons: ["󰒓", "󰖐", "󰌌", "󰍹", "󰐥", "\ue224", "\uf359"]
-    property var tabColors: ["teal", "blue", "peach", "green", "mauve", "yellow", "sapphire"]
+    property var tabNames: ["General", "Weather", "Keybinds", "Monitors", "Startup", "Top bar", "Hyprland", "Power"]
+    property var tabIcons: ["󰒓", "󰖐", "󰌌", "󰍹", "󰐥", "\ue224", "\uf359", "\uf186"]
+    property var tabColors: ["teal", "blue", "peach", "green", "mauve", "yellow", "sapphire", "red"]
 
-    property var tabLoaded: [false, false, false, false, false, false, false]
+    property var tabLoaded: [false, false, false, false, false, false, false, false]
 
     property string dotsVersion: "Loading..."
     Process {
@@ -163,12 +163,12 @@ Item {
 
     Keys.onTabPressed: (event) => {
         if (root.isSearchMode) return;
-        root.currentTab = (root.currentTab + 1) % 7;
+        root.currentTab = (root.currentTab + 1) % 8;
         event.accepted = true;
     }
     Keys.onBacktabPressed: (event) => {
         if (root.isSearchMode) return;
-        root.currentTab = (root.currentTab + 6) % 7;
+        root.currentTab = (root.currentTab + 7) % 8;
         event.accepted = true;
     }
 
@@ -245,6 +245,7 @@ Item {
         else if (root.currentTab === 4) root.saveAllStartup();
         else if (root.currentTab === 5) Config.saveAppSettings();
         else if (root.currentTab === 6) Config.saveAppSettings();
+        else if (root.currentTab === 7) Config.saveAppSettings();
         event.accepted = true;
     }
 
@@ -1083,6 +1084,125 @@ Item {
                                                 MouseArea { id: suggestMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { wpDirInput.text = model.path; pathSuggestModel.clear(); wpDirInput.focus = false; } }
                                             }
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // ── Box: Login (SDDM) wallpaper ──────────────────────────
+                    Rectangle {
+                        id: box2b
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: col5login.implicitHeight + root.s(32)
+                        radius: root.s(12)
+
+                        color: root.surface0
+                        border.color: root.surface1
+                        border.width: 1
+                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+
+                        Process {
+                            id: sddmApplyProc
+                            property string stderrText: ""
+                            command: ["bash", "-c",
+                                'THEME_DIR="/usr/share/sddm/themes/matugen-minimal"; ' +
+                                'if [ ! -d "$THEME_DIR" ]; then echo "SDDM theme not installed" >&2; exit 1; fi; ' +
+                                'if [ ! -f "$1" ]; then echo "File not found" >&2; exit 1; fi; ' +
+                                'pkexec cp -- "$1" "$THEME_DIR/wallpaper.jpg"',
+                                "bash", loginWpInput.text]
+                            stderr: StdioCollector {
+                                onStreamFinished: sddmApplyProc.stderrText = this.text.trim()
+                            }
+                            onExited: (code, status) => {
+                                sddmApplyStatus.text = code === 0
+                                    ? "Applied — takes effect next login"
+                                    : "Error: " + (sddmApplyProc.stderrText || "failed (code " + code + ")")
+                            }
+                        }
+
+                        ColumnLayout {
+                            id: col5login
+                            anchors.top: parent.top; anchors.left: parent.left; anchors.right: parent.right; anchors.margins: root.s(16)
+                            RowLayout {
+                                Layout.fillWidth: true; spacing: root.s(14)
+                                Item {
+                                    Layout.preferredWidth: root.s(22); Layout.alignment: Qt.AlignTop; Layout.topMargin: root.s(2)
+                                    Text {
+                                        anchors.top: parent.top; anchors.horizontalCenter: parent.horizontalCenter
+                                        text: "󰢹"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
+                                        color: root.blue
+                                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                    }
+                                }
+                                ColumnLayout {
+                                    Layout.fillWidth: true; Layout.alignment: Qt.AlignTop; spacing: root.s(3)
+                                    Text {
+                                        text: "Login screen wallpaper"; font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(14)
+                                        color: root.text; Layout.fillWidth: true
+                                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                    }
+                                    Text {
+                                        text: "Absolute path to an image — applies to SDDM, prompts for your password"; font.family: "Inter"; font.pixelSize: root.s(11)
+                                        color: Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
+                                        Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                    }
+                                    RowLayout {
+                                        Layout.fillWidth: true; Layout.topMargin: root.s(8); spacing: root.s(8)
+                                        Rectangle {
+                                            Layout.fillWidth: true; Layout.preferredHeight: root.s(34)
+                                            radius: root.s(7)
+                                            color: root.surface0
+                                            border.color: loginWpInput.activeFocus ? root.mauve : root.surface2
+                                            border.width: 1
+                                            Behavior on border.color { ColorAnimation { duration: 200 } }
+                                            Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                            TextInput {
+                                                id: loginWpInput
+                                                anchors.fill: parent; anchors.margins: root.s(9)
+                                                verticalAlignment: TextInput.AlignVCenter
+                                                text: Config.sddmWallpaperPath
+                                                font.family: "JetBrains Mono"; font.pixelSize: root.s(11)
+                                                color: root.text; clip: true; selectByMouse: true
+                                                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
+                                                onTextChanged: Config.sddmWallpaperPath = text
+                                                Text {
+                                                    text: "/path/to/image.jpg"; color: root.subtext0
+                                                    visible: !parent.text && !parent.activeFocus; font: parent.font; anchors.verticalCenter: parent.verticalCenter
+                                                }
+                                            }
+                                        }
+                                        Rectangle {
+                                            Layout.preferredWidth: root.s(80); Layout.preferredHeight: root.s(34)
+                                            radius: root.s(7)
+                                            color: applyLoginWpMa.containsMouse ? Qt.alpha(root.mauve, 0.25) : Qt.alpha(root.mauve, 0.15)
+                                            border.color: root.mauve; border.width: 1
+                                            Behavior on color { ColorAnimation { duration: 150 } }
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: sddmApplyProc.running ? "…" : "Apply"
+                                                font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(12)
+                                                color: root.mauve
+                                            }
+                                            MouseArea {
+                                                id: applyLoginWpMa
+                                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                                enabled: loginWpInput.text.length > 0 && !sddmApplyProc.running
+                                                onClicked: {
+                                                    sddmApplyStatus.text = "";
+                                                    sddmApplyProc.running = false;
+                                                    sddmApplyProc.running = true;
+                                                }
+                                            }
+                                        }
+                                    }
+                                    Text {
+                                        id: sddmApplyStatus
+                                        Layout.fillWidth: true; Layout.topMargin: root.s(4)
+                                        font.family: "Inter"; font.pixelSize: root.s(11)
+                                        color: text.startsWith("Error") ? root.red : root.green
+                                        visible: text.length > 0
+                                        wrapMode: Text.Wrap
                                     }
                                 }
                             }
@@ -2330,6 +2450,7 @@ Item {
                                 else if (root.currentTab === 3) Config.applyMonitors();
                                 else if (root.currentTab === 5) Config.saveAppSettings();
                                 else if (root.currentTab === 6) Config.saveAppSettings();
+                                else if (root.currentTab === 7) Config.saveAppSettings();
                             }
                         }
                     }
@@ -2797,6 +2918,18 @@ Item {
                         function layoutListIncrementIndex() { if (item) item.layoutListIncrementIndex(); }
                         function layoutListDecrementIndex() { if (item) item.layoutListDecrementIndex(); }
                         function acceptLayoutSelection() { if (item) item.acceptLayoutSelection(); }
+                        function scrollTo(y) { if (item) item.scrollTo(y); }
+                        function scrollToBox(y) { if (item) item.scrollToBox(y); }
+                    }
+
+                    Loader {
+                        id: powerLoader
+                        anchors.fill: parent
+                        active: root.tabLoaded[7] && Config.dataReady
+                        sourceComponent: powerTabComponent
+                        visible: root.currentTab === 7 && !root.isSearchMode
+                        opacity: visible ? 1.0 : 0.0
+                        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
                         function scrollTo(y) { if (item) item.scrollTo(y); }
                         function scrollToBox(y) { if (item) item.scrollToBox(y); }
                     }
@@ -4100,6 +4233,35 @@ Item {
                         checked: Config.naturalScrollEnabled
                         onToggled: Config.naturalScrollEnabled = !Config.naturalScrollEnabled
                     }
+        }
+    }
+
+    Component {
+        id: powerTabComponent
+        TabScrollArea {
+            id: powerTabRoot
+            scaleFunc: root.s
+
+                    StepperBox {
+                        theme: root; scaleFunc: root.s
+                        icon: ""; label: "Lock timeout"; description: "Idle time before the session locks"
+                        accentColor: root.yellow
+                        value: Config.lockTimeoutMinutes; minValue: 1; maxValue: 120; stepSize: 1
+                        decimals: 0; unit: "m"; signedDisplay: false
+                        onChanged: (v) => Config.lockTimeoutMinutes = v
+                    }
+
+
+                    StepperBox {
+                        theme: root; scaleFunc: root.s
+                        icon: ""; label: "Suspend timeout"; description: "Idle time before the machine sleeps"
+                        accentColor: root.red
+                        value: Config.suspendTimeoutMinutes; minValue: 1; maxValue: 240; stepSize: 1
+                        decimals: 0; unit: "m"; signedDisplay: false
+                        onChanged: (v) => Config.suspendTimeoutMinutes = v
+                    }
+
+                    Item { Layout.preferredHeight: root.s(16) }
         }
     }
 }
