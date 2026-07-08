@@ -692,7 +692,7 @@ Item {
 
                 property var archLayers: [
                     { name: "UI", clr: "blue",
-                      desc: "TopBar, popups and widgets \u2014 the QML surface rendered on screen." },
+                      desc: "TopBar, popups and widgets, the QML surface rendered on screen." },
                     { name: "Scripts & config", clr: "teal",
                       desc: "Bash scripts and .conf templates gluing settings.json to everything below." },
                     { name: "Quickshell engine", clr: "peach",
@@ -700,7 +700,7 @@ Item {
                     { name: "Hyprland compositor", clr: "maroon",
                       desc: "The Wayland compositor: windows, workspaces, animations, input routing." },
                     { name: "systemd & services", clr: "red",
-                      desc: "logind, hypridle, polkit, NetworkManager \u2014 the daemons the shell calls into." },
+                      desc: "logind, hypridle, polkit, NetworkManager, the daemons the shell calls into." },
                     { name: "Kernel & hardware", clr: "yellow",
                       desc: "The Linux kernel, drivers, and the physical machine everything runs on." }
                 ]
@@ -987,6 +987,83 @@ Item {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/nixos-configuration"]) 
+                        }
+                    }
+
+                    // COAUTHOR BLOCK
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: root.s(50)
+                        radius: root.s(10)
+                        color: authorMa.containsMouse ? Qt.alpha(root.surface1, 0.6) : Qt.alpha(root.surface0, 0.4)
+                        border.color: authorMa.containsMouse ? root.mauve : root.surface1
+                        border.width: 1
+                        scale: authorMa.pressed ? 0.98 : (authorMa.containsMouse ? 1.01 : 1.0)
+                        
+                        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                        Behavior on color { ColorAnimation { duration: 200 } }
+                        Behavior on border.color { ColorAnimation { duration: 200 } }
+
+                        RowLayout {
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
+                            anchors.right: parent.right
+                            anchors.margins: root.s(12)
+                            spacing: root.s(15)
+                            
+                            Rectangle { 
+                                Layout.alignment: Qt.AlignVCenter
+                                width: root.s(32)
+                                height: root.s(32)
+                                radius: root.s(8)
+                                color: root.surface0
+                                border.color: root.surface2
+                                border.width: 1
+                                Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(20); color: root.text } 
+                            }
+                            
+                            Row {
+                                Layout.alignment: Qt.AlignVCenter
+                                spacing: root.s(1)
+                                Repeater {
+                                    model: [ { l: "V", c: root.red }, { l: "a", c: root.peach }, { l: "l", c: root.yellow }, { l: "c", c: root.green }, { l: "h", c: root.sapphire }, { l: "a", c: root.blue }, { l: "u", c: root.mauve }, { l: "l", c: root.pink } ]
+                                    Text { 
+                                        text: modelData.l
+                                        font.family: "JetBrains Mono"
+                                        font.weight: Font.Black
+                                        font.pixelSize: root.s(14)
+                                        color: modelData.c
+                                        property real hoverOffset: authorMa.containsMouse ? root.s(-3) : 0
+                                        transform: Translate { y: hoverOffset }
+                                        Behavior on hoverOffset { NumberAnimation { duration: 300 + (index * 35); easing.type: Easing.OutBack } } 
+                                    }
+                                }
+                            }
+                            
+                            Item { Layout.fillWidth: true }
+                            
+                            Rectangle { 
+                                Layout.alignment: Qt.AlignVCenter
+                                width: root.s(28)
+                                height: root.s(28)
+                                radius: root.s(6)
+                                color: authorMa.containsMouse ? root.surface1 : "transparent"
+                                Text { 
+                                    anchors.centerIn: parent
+                                    text: ""
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: root.s(14)
+                                    color: authorMa.containsMouse ? root.mauve : root.subtext0
+                                    Behavior on color { ColorAnimation { duration: 150 } } 
+                                } 
+                            }
+                        }
+                        MouseArea { 
+                            id: authorMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Valchaul/imperative-dots"]) 
                         }
                     }
 
