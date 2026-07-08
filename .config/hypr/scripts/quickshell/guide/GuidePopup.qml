@@ -123,6 +123,8 @@ Item {
     readonly property color peach: _theme.peach
     readonly property color yellow: _theme.yellow
     readonly property color red: _theme.red
+    readonly property color teal: _theme.teal
+    readonly property color maroon: _theme.maroon
 
     property real colorBlend: 0.0
     SequentialAnimation on colorBlend {
@@ -869,7 +871,7 @@ Item {
                                     spacing: root.s(15)
                                     RowLayout { 
                                         spacing: root.s(6)
-                                        Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.blue } 
+                                        Text { text: "󰣇"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root.blue } 
                                         Text { text: root.sysOS; font.family: "JetBrains Mono"; font.weight: Font.Medium; font.pixelSize: root.s(12); color: root.subtext0 } 
                                     }
                                     RowLayout { 
@@ -911,160 +913,6 @@ Item {
                             }
                         }
                         MouseArea { id: sysBoxMa; anchors.fill: parent; hoverEnabled: true }
-                    }
-
-                    // AUTHOR BLOCK
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.s(50)
-                        radius: root.s(10)
-                        color: authorMa.containsMouse ? Qt.alpha(root.surface1, 0.6) : Qt.alpha(root.surface0, 0.4)
-                        border.color: authorMa.containsMouse ? root.mauve : root.surface1
-                        border.width: 1
-                        scale: authorMa.pressed ? 0.98 : (authorMa.containsMouse ? 1.01 : 1.0)
-                        
-                        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-                        Behavior on color { ColorAnimation { duration: 200 } }
-                        Behavior on border.color { ColorAnimation { duration: 200 } }
-
-                        RowLayout {
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.margins: root.s(12)
-                            spacing: root.s(15)
-                            
-                            Rectangle { 
-                                Layout.alignment: Qt.AlignVCenter
-                                width: root.s(32)
-                                height: root.s(32)
-                                radius: root.s(8)
-                                color: root.surface0
-                                border.color: root.surface2
-                                border.width: 1
-                                Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(20); color: root.text } 
-                            }
-                            
-                            Row {
-                                Layout.alignment: Qt.AlignVCenter
-                                spacing: root.s(1)
-                                Repeater {
-                                    model: [ { l: "i", c: root.red }, { l: "l", c: root.peach }, { l: "y", c: root.yellow }, { l: "a", c: root.green }, { l: "m", c: root.sapphire }, { l: "i", c: root.blue }, { l: "r", c: root.mauve }, { l: "o", c: root.pink } ]
-                                    Text { 
-                                        text: modelData.l
-                                        font.family: "JetBrains Mono"
-                                        font.weight: Font.Black
-                                        font.pixelSize: root.s(14)
-                                        color: modelData.c
-                                        property real hoverOffset: authorMa.containsMouse ? root.s(-3) : 0
-                                        transform: Translate { y: hoverOffset }
-                                        Behavior on hoverOffset { NumberAnimation { duration: 300 + (index * 35); easing.type: Easing.OutBack } } 
-                                    }
-                                }
-                            }
-                            
-                            Item { Layout.fillWidth: true }
-                            
-                            Rectangle { 
-                                Layout.alignment: Qt.AlignVCenter
-                                width: root.s(28)
-                                height: root.s(28)
-                                radius: root.s(6)
-                                color: authorMa.containsMouse ? root.surface1 : "transparent"
-                                Text { 
-                                    anchors.centerIn: parent
-                                    text: ""
-                                    font.family: "Iosevka Nerd Font"
-                                    font.pixelSize: root.s(14)
-                                    color: authorMa.containsMouse ? root.mauve : root.subtext0
-                                    Behavior on color { ColorAnimation { duration: 150 } } 
-                                } 
-                            }
-                        }
-                        MouseArea { 
-                            id: authorMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/nixos-configuration"]) 
-                        }
-                    }
-
-                    // COAUTHOR BLOCK
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: root.s(50)
-                        radius: root.s(10)
-                        color: authorMa.containsMouse ? Qt.alpha(root.surface1, 0.6) : Qt.alpha(root.surface0, 0.4)
-                        border.color: authorMa.containsMouse ? root.mauve : root.surface1
-                        border.width: 1
-                        scale: authorMa.pressed ? 0.98 : (authorMa.containsMouse ? 1.01 : 1.0)
-                        
-                        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-                        Behavior on color { ColorAnimation { duration: 200 } }
-                        Behavior on border.color { ColorAnimation { duration: 200 } }
-
-                        RowLayout {
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.margins: root.s(12)
-                            spacing: root.s(15)
-                            
-                            Rectangle { 
-                                Layout.alignment: Qt.AlignVCenter
-                                width: root.s(32)
-                                height: root.s(32)
-                                radius: root.s(8)
-                                color: root.surface0
-                                border.color: root.surface2
-                                border.width: 1
-                                Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(20); color: root.text } 
-                            }
-                            
-                            Row {
-                                Layout.alignment: Qt.AlignVCenter
-                                spacing: root.s(1)
-                                Repeater {
-                                    model: [ { l: "V", c: root.red }, { l: "a", c: root.peach }, { l: "l", c: root.yellow }, { l: "c", c: root.green }, { l: "h", c: root.sapphire }, { l: "a", c: root.blue }, { l: "u", c: root.mauve }, { l: "l", c: root.pink } ]
-                                    Text { 
-                                        text: modelData.l
-                                        font.family: "JetBrains Mono"
-                                        font.weight: Font.Black
-                                        font.pixelSize: root.s(14)
-                                        color: modelData.c
-                                        property real hoverOffset: authorMa.containsMouse ? root.s(-3) : 0
-                                        transform: Translate { y: hoverOffset }
-                                        Behavior on hoverOffset { NumberAnimation { duration: 300 + (index * 35); easing.type: Easing.OutBack } } 
-                                    }
-                                }
-                            }
-                            
-                            Item { Layout.fillWidth: true }
-                            
-                            Rectangle { 
-                                Layout.alignment: Qt.AlignVCenter
-                                width: root.s(28)
-                                height: root.s(28)
-                                radius: root.s(6)
-                                color: authorMa.containsMouse ? root.surface1 : "transparent"
-                                Text { 
-                                    anchors.centerIn: parent
-                                    text: ""
-                                    font.family: "Iosevka Nerd Font"
-                                    font.pixelSize: root.s(14)
-                                    color: authorMa.containsMouse ? root.mauve : root.subtext0
-                                    Behavior on color { ColorAnimation { duration: 150 } } 
-                                } 
-                            }
-                        }
-                        MouseArea { 
-                            id: authorMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Quickshell.execDetached(["xdg-open", "https://github.com/Valchaul/imperative-dots"]) 
-                        }
                     }
 
 
@@ -1594,15 +1442,16 @@ Item {
 
                     Repeater {
                         model: [
-                            { name: "NixOS Config", icon: "", color: "blue", url: "https://github.com/ilyamiro/nixos-configuration" },
-                            { name: "Imperative Dots", icon: "󰣇", color: "mauve", url: "https://github.com/ilyamiro/imperative-dots" },
+                            { name: "Imperative Dots fork", icon: "󰣇", color: "mauve", url: "https://github.com/Valchaul/imperative-dots"},
+                            { name: "Imperative Dots", icon: "󰣇", color: "mauve", url: "https://github.com/ilyamiro/imperative-dots"},
                             { name: "Wallpapers", icon: "", color: "peach", url: "https://github.com/ilyamiro/shell-wallpapers" }
                         ]
 
                         Rectangle {
-                            Layout.preferredWidth: root.s(140)
-                            Layout.preferredHeight: root.s(140)
-                            radius: root.s(16)
+                            id: repoCard
+                            Layout.preferredWidth: root.s(180)
+                            Layout.preferredHeight: root.s(190)
+                            radius: root.s(18)
                             color: repoMa.containsMouse ? Qt.alpha(root[modelData.color], 0.15) : Qt.alpha(root.surface0, 0.4)
                             border.color: repoMa.containsMouse ? root[modelData.color] : root.surface1
                             border.width: 1
@@ -1612,14 +1461,16 @@ Item {
                             Behavior on color { ColorAnimation { duration: 200 } }
                             Behavior on border.color { ColorAnimation { duration: 200 } }
 
+                            property string author: modelData.url.match(/github\.com\/([^\/]+)/)[1]
+
                             ColumnLayout {
                                 anchors.centerIn: parent
-                                spacing: root.s(15)
+                                spacing: root.s(14)
 
                                 Text {
                                     text: modelData.icon
                                     font.family: "Iosevka Nerd Font"
-                                    font.pixelSize: root.s(42)
+                                    font.pixelSize: root.s(46)
                                     color: root[modelData.color]
                                     Layout.alignment: Qt.AlignHCenter
                                 }
@@ -1628,9 +1479,33 @@ Item {
                                     text: modelData.name
                                     font.family: "JetBrains Mono"
                                     font.weight: Font.Bold
-                                    font.pixelSize: root.s(13)
+                                    font.pixelSize: root.s(14)
                                     color: root.text
                                     Layout.alignment: Qt.AlignHCenter
+                                }
+
+                                RowLayout {
+                                    Layout.alignment: Qt.AlignHCenter
+                                    spacing: root.s(6)
+
+                                    Text {
+                                        text: "\uf09b"
+                                        font.family: "Iosevka Nerd Font"
+                                        font.pixelSize: root.s(12)
+                                        color: root.subtext0
+                                    }
+                                    Text {
+                                        text: repoCard.author
+                                        font.family: "JetBrains Mono"
+                                        font.pixelSize: root.s(11)
+                                        color: root.subtext0
+                                    }
+                                    Text {
+                                        text: "\uf08e"
+                                        font.family: "Iosevka Nerd Font"
+                                        font.pixelSize: root.s(10)
+                                        color: root.subtext0
+                                    }
                                 }
                             }
 
