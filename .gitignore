@@ -5,6 +5,7 @@
 .config/hypr/config/keybindings.conf
 .config/hypr/config/monitors.conf
 .config/hypr/hypridle.conf
+.config/hypr/scripts/quickshell/test
 
 # IDEs
 .idea

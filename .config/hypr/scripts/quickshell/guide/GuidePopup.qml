@@ -680,6 +680,7 @@ Item {
             // TAB 1: SYSTEM OVERVIEW
             // ------------------------------------------
             Item {
+                id: tab1Item
                 anchors.fill: parent
                 visible: root.currentTab === 1
                 opacity: visible ? 1.0 : 0.0
@@ -689,15 +690,20 @@ Item {
                 transform: Translate { y: slideY }
                 Behavior on opacity { NumberAnimation { duration: 250 } }
 
-                ListModel {
-                    id: systemDataModel
-                    ListElement { pkg: "Hyprland"; role: "Wayland Compositor"; icon: ""; clr: "blue"; link: "https://hyprland.org/" }
-                    ListElement { pkg: "Quickshell"; role: "UI Framework"; icon: "󰣆"; clr: "mauve"; link: "https://git.outfoxxed.me/outfoxxed/quickshell" }
-                    ListElement { pkg: "Matugen"; role: "Theme Engine"; icon: "󰏘"; clr: "peach"; link: "https://github.com/InioX/matugen" }
-                    ListElement { pkg: "Rofi Wayland"; role: "App Launcher"; icon: ""; clr: "green"; link: "https://github.com/lbonn/rofi" }
-                    ListElement { pkg: "Kitty"; role: "Terminal Emulator"; icon: "󰄛"; clr: "yellow"; link: "https://sw.kovidgoyal.net/kitty/" }
-                    ListElement { pkg: "SwayOSD / NC"; role: "Overlays & Notifs"; icon: "󰂚"; clr: "pink"; link: "https://github.com/ErikReider/SwayOSD" }
-                }
+                property var archLayers: [
+                    { name: "UI", clr: "blue",
+                      desc: "TopBar, popups and widgets \u2014 the QML surface rendered on screen." },
+                    { name: "Scripts & config", clr: "teal",
+                      desc: "Bash scripts and .conf templates gluing settings.json to everything below." },
+                    { name: "Quickshell engine", clr: "peach",
+                      desc: "The QML/C++ runtime that renders the shell and brokers IPC between components." },
+                    { name: "Hyprland compositor", clr: "maroon",
+                      desc: "The Wayland compositor: windows, workspaces, animations, input routing." },
+                    { name: "systemd & services", clr: "red",
+                      desc: "logind, hypridle, polkit, NetworkManager \u2014 the daemons the shell calls into." },
+                    { name: "Kernel & hardware", clr: "yellow",
+                      desc: "The Linux kernel, drivers, and the physical machine everything runs on." }
+                ]
 
                 ColumnLayout {
                     anchors.fill: parent
@@ -984,53 +990,6 @@ Item {
                         }
                     }
 
-                    // MODULES AND QUICK LINKS ROW
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: root.s(15)
-                        
-                        Repeater {
-                            model: [ 
-                                { name: "Settings", icon: "", color: "mauve", targetTab: 0, isToggle: true }, 
-                                { name: "Modules", icon: "󰣆", color: "blue", targetTab: 2, isToggle: false } 
-                            ]
-                            
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: root.s(44)
-                                radius: root.s(8)
-                                color: navBtnMa.containsMouse ? Qt.alpha(root[modelData.color], 0.15) : Qt.alpha(root.surface0, 0.4)
-                                border.color: navBtnMa.containsMouse ? root[modelData.color] : root.surface1
-                                border.width: 1
-                                scale: navBtnMa.pressed ? 0.95 : 1.0
-                                
-                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuart } }
-                                Behavior on color { ColorAnimation { duration: 200 } }
-                                Behavior on border.color { ColorAnimation { duration: 200 } }
-                                
-                                RowLayout { 
-                                    anchors.centerIn: parent
-                                    spacing: root.s(10)
-                                    Text { text: modelData.icon; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(16); color: root[modelData.color] } 
-                                    Text { text: modelData.name; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(13); color: root.text } 
-                                }
-                                
-                                MouseArea { 
-                                    id: navBtnMa
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        if (modelData.isToggle) {
-                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", "settings"]);
-                                        } else {
-                                            root.currentTab = modelData.targetTab;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
 
                     Text { 
                         text: "System Architecture"
@@ -1041,58 +1000,73 @@ Item {
                         Layout.alignment: Qt.AlignVCenter
                         Layout.topMargin: root.s(5) 
                     }
-                    
-                    GridLayout {
+
+                    RowLayout {
                         Layout.fillWidth: true
-                        columns: 2
-                        rowSpacing: root.s(15)
-                        columnSpacing: root.s(15)
-                        
-                        Repeater {
-                            model: systemDataModel
-                            Rectangle {
-                                Layout.fillWidth: true
-                                Layout.preferredHeight: root.s(60)
-                                radius: root.s(10)
-                                color: sysCardMa.containsMouse ? Qt.alpha(root[model.clr], 0.1) : Qt.alpha(root.surface0, 0.4)
-                                border.color: sysCardMa.containsMouse ? root[model.clr] : root.surface1
-                                border.width: 1
-                                scale: sysCardMa.pressed ? 0.98 : 1.0
-                                
-                                Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutQuart } }
-                                Behavior on color { ColorAnimation { duration: 200 } }
-                                Behavior on border.color { ColorAnimation { duration: 200 } }
-                                
-                                Item {
-                                    anchors.fill: parent
-                                    anchors.margins: root.s(10)
-                                    
-                                    Item { 
-                                        id: sysIconBox
-                                        anchors.left: parent.left
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        width: root.s(36)
-                                        height: root.s(36)
-                                        Text { anchors.centerIn: parent; text: model.icon; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(22); color: root[model.clr] } 
-                                    }
-                                    
-                                    Column { 
-                                        anchors.left: sysIconBox.right
-                                        anchors.leftMargin: root.s(15)
-                                        anchors.right: parent.right
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        spacing: root.s(2)
-                                        Text { text: model.pkg; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(14); color: root.text } 
-                                        Text { text: model.role; font.family: "JetBrains Mono"; font.pixelSize: root.s(11); color: root.subtext0 } 
-                                    }
+                        spacing: root.s(28)
+
+                        Canvas {
+                            id: onionCanvas
+                            Layout.preferredWidth: root.s(220)
+                            Layout.preferredHeight: root.s(220)
+                            Layout.alignment: Qt.AlignVCenter
+
+                            function ringColors() {
+                                let cols = [];
+                                for (let i = 0; i < tab1Item.archLayers.length; i++) cols.push(root[tab1Item.archLayers[i].clr]);
+                                return cols;
+                            }
+
+                            onPaint: {
+                                let ctx = getContext("2d");
+                                ctx.reset();
+                                let cols = ringColors();
+                                let cx = width / 2, cy = height / 2;
+                                let maxR = Math.min(width, height) / 2 - 2;
+                                let n = cols.length;
+                                for (let i = 0; i < n; i++) {
+                                    let r = maxR * (n - i) / n;
+                                    ctx.beginPath();
+                                    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+                                    ctx.fillStyle = cols[i];
+                                    ctx.fill();
                                 }
-                                
-                                MouseArea { 
-                                    id: sysCardMa
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: Quickshell.execDetached(["xdg-open", model.link]) 
+                            }
+                            Component.onCompleted: requestPaint()
+                            onWidthChanged: requestPaint()
+                            onHeightChanged: requestPaint()
+                        }
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: root.s(12)
+
+                            Repeater {
+                                model: tab1Item.archLayers
+                                RowLayout {
+                                    Layout.fillWidth: true
+                                    spacing: root.s(12)
+
+                                    Rectangle {
+                                        Layout.preferredWidth: root.s(12)
+                                        Layout.preferredHeight: root.s(12)
+                                        Layout.alignment: Qt.AlignTop
+                                        Layout.topMargin: root.s(3)
+                                        radius: root.s(6)
+                                        color: root[modelData.clr]
+                                    }
+
+                                    ColumnLayout {
+                                        Layout.fillWidth: true
+                                        spacing: root.s(1)
+                                        Text { text: modelData.name; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(14); color: root.text }
+                                        Text {
+                                            text: modelData.desc
+                                            font.family: "JetBrains Mono"; font.pixelSize: root.s(11); color: root.subtext0
+                                            wrapMode: Text.WordWrap
+                                            Layout.fillWidth: true
+                                        }
+                                    }
                                 }
                             }
                         }
