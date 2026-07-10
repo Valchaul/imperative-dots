@@ -91,29 +91,25 @@ Item {
             Repeater {
                 model: root.drives
 
-                delegate: Rectangle {
+                delegate: HoverCard {
                     id: driveCard
                     width: root.s(214)
                     height: root.s(304)
+                    theme: root
+                    scaleFunc: root.s
                     radius: root.s(16)
                     color: root.cSurface0
-                    border.color: cardMa.containsMouse && cardMa.enabled ? root.kindColor(modelData.kind) : root.cSurface1
-                    border.width: 1
-                    Behavior on border.color { ColorAnimation { duration: 200 } }
+                    accentColor: root.kindColor(modelData.kind)
+                    borderColorNormal: root.cSurface1
+                    hoverScale: 1.0
+                    pressScale: 1.0
+                    clickable: modelData.mountpoint !== ""
 
                     // Opens the drive's mount point in the file manager and closes this
-                    // popup. Sits behind the ColumnLayout so the eject button (declared
-                    // later, effectively on top) still gets its own clicks first.
-                    MouseArea {
-                        id: cardMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        enabled: modelData.mountpoint !== ""
-                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: {
-                            Quickshell.execDetached(["nautilus", modelData.mountpoint]);
-                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
-                        }
+                    // popup.
+                    onClicked: {
+                        Quickshell.execDetached(["nautilus", modelData.mountpoint]);
+                        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
                     }
 
                     ColumnLayout {
@@ -382,18 +378,13 @@ Item {
                                     elide: Text.ElideRight
                                 }
 
-                                Rectangle {
-                                    radius: root.s(6)
-                                    color: Qt.alpha(root.kindColor(modelData.kind), 0.15)
-                                    Layout.preferredHeight: root.s(19)
-                                    Layout.preferredWidth: kindBadgeText.implicitWidth + root.s(12)
-                                    Text {
-                                        id: kindBadgeText
-                                        anchors.centerIn: parent
-                                        text: modelData.kind.toUpperCase()
-                                        font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(9)
-                                        color: root.kindColor(modelData.kind)
-                                    }
+                                Badge {
+                                    scaleFunc: root.s
+                                    text: modelData.kind
+                                    accentColor: root.kindColor(modelData.kind)
+                                    uppercase: true
+                                    fontSize: 9
+                                    heightHint: 19
                                 }
                             }
 
@@ -405,15 +396,22 @@ Item {
                             }
 
                             // Eject button - USB drives only
-                            Rectangle {
+                            HoverCard {
                                 visible: modelData.kind === "usb"
                                 Layout.fillWidth: true
                                 Layout.topMargin: root.s(4)
                                 Layout.preferredHeight: root.s(24)
+                                theme: root
+                                scaleFunc: root.s
                                 radius: root.s(7)
-                                color: ejectMa.containsMouse ? Qt.alpha(root.kindColor(modelData.kind), 0.22) : Qt.alpha(root.kindColor(modelData.kind), 0.12)
-                                border.color: Qt.alpha(root.kindColor(modelData.kind), 0.45)
-                                border.width: 1
+                                accentColor: root.kindColor(modelData.kind)
+                                baseColor: root.kindColor(modelData.kind)
+                                baseBgAlpha: 0.12
+                                hoverBgAlpha: 0.22
+                                borderColorNormal: Qt.alpha(root.kindColor(modelData.kind), 0.45)
+                                hoverScale: 1.0
+                                pressScale: 1.0
+                                clickable: !ejectProc.running
 
                                 Text {
                                     anchors.centerIn: parent
@@ -427,14 +425,7 @@ Item {
                                     command: ["udisksctl", "power-off", "-b", "/dev/" + modelData.name]
                                 }
 
-                                MouseArea {
-                                    id: ejectMa
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    enabled: !ejectProc.running
-                                    onClicked: { ejectProc.running = false; ejectProc.running = true; }
-                                }
+                                onClicked: { ejectProc.running = false; ejectProc.running = true; }
                             }
                         }
                     }

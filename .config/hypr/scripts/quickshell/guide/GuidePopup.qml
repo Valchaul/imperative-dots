@@ -491,80 +491,43 @@ Item {
                         
                         Repeater {
                             model: root.tabNames.length
-                            
+
                             Column {
                                 width: parent.width
 
-                                Rectangle {
+                                TabButton {
                                     width: parent.width
                                     height: root.s(44)
-                                    radius: root.s(8)
                                     z: 1
-                                    
-                                    property bool isActive: root.currentTab === index
-                                    // Make it transparent if active so the highlight shows through
-                                    color: isActive ? "transparent" : (tabMa.containsMouse ? Qt.alpha(root.surface1, 0.5) : "transparent")
-                                    
-                                    Behavior on color { ColorAnimation { duration: 150 } }
-
-                                    RowLayout {
-                                        anchors.fill: parent
-                                        anchors.leftMargin: root.s(15)
-                                        spacing: root.s(12)
-
-                                        // The "Slide Right" text effect from snippet 2
-                                        property real contentShift: parent.isActive ? root.s(6) : 0
-                                        Behavior on contentShift { NumberAnimation { duration: 400; easing.type: Easing.OutExpo } }
-                                        transform: Translate { x: contentShift }
-                                        
-                                        Item {
-                                            Layout.preferredWidth: root.s(24)
-                                            Layout.alignment: Qt.AlignVCenter
-                                            Text { 
-                                                anchors.centerIn: parent
-                                                text: root.tabIcons[index]
-                                                font.family: "Iosevka Nerd Font"
-                                                font.pixelSize: root.s(18)
-                                                // Dynamic colors (crust vs subtext0) for contrast
-                                                color: parent.parent.parent.isActive ? root.crust : root.subtext0
-                                                Behavior on color { ColorAnimation { duration: 150 } } 
-                                            }
+                                    theme: root
+                                    scaleFunc: root.s
+                                    contentAlignment: "left"
+                                    icon: root.tabIcons[index]
+                                    label: root.tabNames[index]
+                                    active: root.currentTab === index
+                                    activeColor: root.crust
+                                    inactiveColor: root.subtext0
+                                    hoverColor: root.subtext0
+                                    activeFontWeight: Font.Bold
+                                    inactiveFontWeight: Font.Medium
+                                    activeShift: 6
+                                    hoverBgColor: Qt.alpha(root.surface1, 0.5)
+                                    backgroundRadius: 8
+                                    onClicked: {
+                                        if (index === 0) {
+                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", "settings"]);
+                                        } else {
+                                            root.currentTab = index;
                                         }
-                                        
-                                        Text { 
-                                            text: root.tabNames[index]
-                                            font.family: "JetBrains Mono"
-                                            font.weight: parent.parent.isActive ? Font.Bold : Font.Medium
-                                            font.pixelSize: root.s(13)
-                                            // Dynamic colors (crust vs subtext0) for contrast
-                                            color: parent.parent.isActive ? root.crust : root.subtext0
-                                            Layout.fillWidth: true
-                                            Layout.alignment: Qt.AlignVCenter
-                                            Behavior on color { ColorAnimation { duration: 150 } } 
-                                        }
-                                    }
-                                    
-                                    MouseArea { 
-                                        id: tabMa
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: {
-                                            if (index === 0) {
-                                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", "settings"]);
-                                            } else {
-                                                root.currentTab = index;
-                                            }
-                                        } 
                                     }
                                 }
-                                
+
                                 // Divider natively wrapped to provide spacing
                                 Item {
                                     visible: index === 0
                                     width: parent.width
                                     height: root.s(21) // 10 top + 1 mid + 10 bot
-                                    
+
                                     Rectangle {
                                         anchors.centerIn: parent
                                         width: parent.width
@@ -580,23 +543,25 @@ Item {
                 Item { Layout.fillHeight: true }
 
                 // --- UPDATE AVAILABLE BUTTON ---
-                Rectangle {
+                HoverCard {
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.updateAvailable ? root.s(50) : 0
                     visible: root.updateAvailable
                     opacity: root.updateAvailable ? 1.0 : 0.0
                     radius: root.s(8)
-                    color: updateHover.containsMouse ? Qt.alpha(root.green, 0.15) : Qt.alpha(root.green, 0.05)
-                    border.color: updateHover.containsMouse ? root.green : Qt.alpha(root.green, 0.4)
-                    border.width: 1
-                    scale: updateHover.pressed ? 0.96 : (updateHover.containsMouse ? 1.02 : 1.0)
                     clip: true
-                    
+                    theme: root
+                    scaleFunc: root.s
+                    accentColor: root.green
+                    baseColor: root.green
+                    baseBgAlpha: 0.05
+                    hoverBgAlpha: 0.15
+                    borderColorNormal: Qt.alpha(root.green, 0.4)
+                    hoverScale: 1.02
+                    pressScale: 0.96
+
                     Behavior on Layout.preferredHeight { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
                     Behavior on opacity { NumberAnimation { duration: 300 } }
-                    Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
 
                     ColumnLayout {
                         anchors.centerIn: parent
@@ -618,52 +583,41 @@ Item {
                         }
                     }
 
-                    MouseArea {
-                        id: updateHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/imperative-dots/master/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/imperative-dots/master/install.sh)\"'; fi";
-                            Quickshell.execDetached(["bash", "-c", cmd]);
-                        }
+                    onClicked: {
+                        let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/imperative-dots/master/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/imperative-dots/master/install.sh)\"'; fi";
+                        Quickshell.execDetached(["bash", "-c", cmd]);
                     }
                 }
 
                 // --- CLOSE BUTTON ---
-                Rectangle {
+                HoverCard {
                     Layout.fillWidth: true
                     Layout.preferredHeight: root.s(44)
                     radius: root.s(8)
-                    color: closeHover.containsMouse ? Qt.alpha(root.red, 0.1) : "transparent"
-                    border.color: closeHover.containsMouse ? root.red : root.surface1
-                    border.width: 1
-                    scale: closeHover.pressed ? 0.95 : (closeHover.containsMouse ? 1.02 : 1.0)
-                    
-                    Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-                    Behavior on color { ColorAnimation { duration: 150 } }
-                    Behavior on border.color { ColorAnimation { duration: 150 } }
+                    theme: root
+                    scaleFunc: root.s
+                    accentColor: root.red
+                    baseBgAlpha: 0
+                    hoverBgAlpha: 0.1
+                    borderColorNormal: root.surface1
+                    hoverScale: 1.02
+                    pressScale: 0.95
 
                     Item {
                         anchors.centerIn: parent
                         width: arrowText.implicitWidth
                         height: arrowText.implicitHeight
-                        Text { 
+                        Text {
                             id: arrowText
-                            text: ""
+                            text: ""
                             font.family: "Iosevka Nerd Font"
                             font.pixelSize: root.s(16)
-                            color: closeHover.containsMouse ? root.red : root.subtext0
-                            Behavior on color { ColorAnimation { duration: 150 } } 
+                            color: parent.parent.containsMouse ? root.red : root.subtext0
+                            Behavior on color { ColorAnimation { duration: 150 } }
                         }
                     }
-                    MouseArea { 
-                        id: closeHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: closeSequence.start() 
-                    }
+
+                    onClicked: closeSequence.start()
                 }
             }
         }
@@ -1447,19 +1401,19 @@ Item {
                             { name: "Wallpapers", icon: "", color: "peach", url: "https://github.com/ilyamiro/shell-wallpapers" }
                         ]
 
-                        Rectangle {
+                        HoverCard {
                             id: repoCard
                             Layout.preferredWidth: root.s(180)
                             Layout.preferredHeight: root.s(190)
+                            theme: root
+                            scaleFunc: root.s
                             radius: root.s(18)
-                            color: repoMa.containsMouse ? Qt.alpha(root[modelData.color], 0.15) : Qt.alpha(root.surface0, 0.4)
-                            border.color: repoMa.containsMouse ? root[modelData.color] : root.surface1
-                            border.width: 1
-                            scale: repoMa.pressed ? 0.95 : (repoMa.containsMouse ? 1.05 : 1.0)
-
-                            Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                            Behavior on color { ColorAnimation { duration: 200 } }
-                            Behavior on border.color { ColorAnimation { duration: 200 } }
+                            accentColor: root[modelData.color]
+                            baseColor: root.surface0
+                            borderColorNormal: root.surface1
+                            hoverBgAlpha: 0.15
+                            hoverScale: 1.05
+                            pressScale: 0.95
 
                             property string author: modelData.url.match(/github\.com\/([^\/]+)/)[1]
 
@@ -1509,13 +1463,7 @@ Item {
                                 }
                             }
 
-                            MouseArea {
-                                id: repoMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Quickshell.execDetached(["xdg-open", modelData.url])
-                            }
+                            onClicked: Quickshell.execDetached(["xdg-open", modelData.url])
                         }
                     }
                 }

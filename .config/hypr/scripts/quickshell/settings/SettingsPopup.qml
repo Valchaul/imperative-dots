@@ -1149,28 +1149,14 @@ Item {
                                     }
                                     RowLayout {
                                         Layout.fillWidth: true; Layout.topMargin: root.s(8); spacing: root.s(8)
-                                        Rectangle {
+                                        FocusInput {
+                                            id: loginWpInput
                                             Layout.fillWidth: true; Layout.preferredHeight: root.s(34)
-                                            radius: root.s(7)
-                                            color: root.surface0
-                                            border.color: loginWpInput.activeFocus ? root.mauve : root.surface2
-                                            border.width: 1
-                                            Behavior on border.color { ColorAnimation { duration: 200 } }
-                                            Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
-                                            TextInput {
-                                                id: loginWpInput
-                                                anchors.fill: parent; anchors.margins: root.s(9)
-                                                verticalAlignment: TextInput.AlignVCenter
-                                                text: Config.sddmWallpaperPath
-                                                font.family: "JetBrains Mono"; font.pixelSize: root.s(11)
-                                                color: root.text; clip: true; selectByMouse: true
-                                                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
-                                                onTextChanged: Config.sddmWallpaperPath = text
-                                                Text {
-                                                    text: "/path/to/image.jpg"; color: root.subtext0
-                                                    visible: !parent.text && !parent.activeFocus; font: parent.font; anchors.verticalCenter: parent.verticalCenter
-                                                }
-                                            }
+                                            theme: root
+                                            scaleFunc: root.s
+                                            placeholder: "/path/to/image.jpg"
+                                            text: Config.sddmWallpaperPath
+                                            onTextChanged: Config.sddmWallpaperPath = text
                                         }
                                         Rectangle {
                                             Layout.preferredWidth: root.s(80); Layout.preferredHeight: root.s(34)
@@ -1254,7 +1240,7 @@ Item {
             scaleFunc: root.s
 
             function focusApiKey() { apiKeyInput.forceActiveFocus(); }
-            function focusCityId() { cityIdInput.forceActiveFocus(); }
+            function focusCityId() { cityIdInput.inputItem.forceActiveFocus(); }
 
             Component.onCompleted: {
                 apiKeyInput.text = Config.weatherApiKey;
@@ -1523,30 +1509,15 @@ Item {
                                     }
                                 }
                             }
-                            Rectangle {
+                            FocusInput {
+                                id: cityIdInput
                                 Layout.fillWidth: true; Layout.preferredHeight: root.s(42)
-                                radius: root.s(7)
-                                color: root.surface0
-                                border.color: cityIdInput.activeFocus
-                                    ? (root.blue)
-                                    : (root.surface2)
-                                border.width: 1
-                                Behavior on border.color { ColorAnimation { duration: 150 } }
-                                Behavior on color { ColorAnimation { duration: 220; easing.type: Easing.OutExpo } }
-                                TextInput {
-                                    id: cityIdInput
-                                    anchors.fill: parent; anchors.margins: root.s(10)
-                                    verticalAlignment: TextInput.AlignVCenter
-                                    font.family: "JetBrains Mono"; font.pixelSize: root.s(12)
-                                    color: root.text; clip: true; selectByMouse: true
-                                    onTextChanged: Config.weatherCityId = text
-                                    Behavior on color { ColorAnimation { duration: 220 } }
-                                    Text {
-                                        text: "City ID (e.g. 2624652)"; color: root.subtext0
-                                        visible: !parent.text && !parent.activeFocus; font: parent.font; anchors.verticalCenter: parent.verticalCenter
-                                        Behavior on color { ColorAnimation { duration: 220 } }
-                                    }
-                                }
+                                theme: root
+                                scaleFunc: root.s
+                                accentColor: root.blue
+                                fontSize: 12
+                                placeholder: "City ID (e.g. 2624652)"
+                                onTextChanged: Config.weatherCityId = text
                             }
                         }
                     }
@@ -2054,28 +2025,17 @@ Item {
                                     }
 
                                     // Command input
-                                    Rectangle {
+                                    FocusInput {
+                                        id: cmdInput
                                         Layout.fillWidth: true; Layout.preferredHeight: root.s(34)
-                                        radius: root.s(6)
-                                        color: cmdInput.activeFocus ? Qt.alpha(root.peach, 0.08) : root.surface0
-                                        border.color: cmdInput.activeFocus ? root.peach : root.surface2
-                                        border.width: 1; z: 1
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-                                        Behavior on border.color { ColorAnimation { duration: 150 } }
-                                        TextInput {
-                                            id: cmdInput
-                                            anchors.fill: parent; anchors.margins: root.s(9)
-                                            verticalAlignment: TextInput.AlignVCenter
-                                            text: model.command
-                                            font.family: "JetBrains Mono"; font.pixelSize: root.s(11)
-                                            color: root.text; clip: true; selectByMouse: true
-                                            onTextChanged: dynamicKeybindsModel.setProperty(outerIndex, "command", text)
-                                            Text {
-                                                text: "Command arguments..."
-                                                color: root.subtext0
-                                                visible: !parent.text && !parent.activeFocus; font: parent.font; anchors.verticalCenter: parent.verticalCenter
-                                            }
-                                        }
+                                        z: 1
+                                        theme: root
+                                        scaleFunc: root.s
+                                        accentColor: root.peach
+                                        focusBgColor: Qt.alpha(root.peach, 0.08)
+                                        placeholder: "Command arguments..."
+                                        text: model.command
+                                        onTextChanged: dynamicKeybindsModel.setProperty(outerIndex, "command", text)
                                     }
 
                                     RowLayout {
@@ -2307,53 +2267,24 @@ Item {
 
                                 Repeater {
                                     model: root.tabNames.length
-                                    Rectangle {
+                                    TabButton {
                                         width: parent.width
                                         height: root.s(44)
-                                        radius: root.s(8)
                                         z: 1
-                                        property bool isActive: root.currentTab === index
-                                        color: (settingsTabMa.containsMouse ? Qt.alpha(root.surface1, 0.5) : "transparent")
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-
-                                        RowLayout {
-                                            anchors.fill: parent
-                                            anchors.leftMargin: root.s(15)
-                                            spacing: root.s(12)
-                                            property real contentShift: 0
-                                            Behavior on contentShift { NumberAnimation { duration: 400; easing.type: Easing.OutExpo } }
-                                            transform: Translate { x: contentShift }
-
-                                            Item {
-                                                Layout.preferredWidth: root.s(24)
-                                                Layout.alignment: Qt.AlignVCenter
-                                                Text {
-                                                    anchors.centerIn: parent
-                                                    text: root.tabIcons[index]
-                                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(18)
-                                                    color: isActive ? "black" : root.subtext0
-                                                    Behavior on color { ColorAnimation { duration: 150 } }
-                                                }
-                                            }
-                                            Text {
-                                                text: root.tabNames[index]
-                                                font.family: "JetBrains Mono"
-                                                font.weight: Font.Medium
-                                                font.pixelSize: root.s(13)
-                                                color: isActive ? "black" : root.subtext0
-                                                Layout.fillWidth: true
-                                                elide: Text.ElideRight
-                                                Behavior on color { ColorAnimation { duration: 150 } }
-                                            }
-                                        }
-
-                                        MouseArea {
-                                            id: settingsTabMa
-                                            anchors.fill: parent
-                                            hoverEnabled: true
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: { root.currentTab = index; root.isSearchMode = false; }
-                                        }
+                                        theme: root
+                                        scaleFunc: root.s
+                                        contentAlignment: "left"
+                                        icon: root.tabIcons[index]
+                                        label: root.tabNames[index]
+                                        active: root.currentTab === index
+                                        activeColor: "black"
+                                        inactiveColor: root.subtext0
+                                        hoverColor: root.subtext0
+                                        activeFontWeight: Font.Medium
+                                        inactiveFontWeight: Font.Medium
+                                        hoverBgColor: Qt.alpha(root.surface1, 0.5)
+                                        backgroundRadius: 8
+                                        onClicked: { root.currentTab = index; root.isSearchMode = false; }
                                     }
                                 }
                             }
@@ -2668,15 +2599,14 @@ Item {
                                                     color: Qt.alpha(root.subtext0, 0.7); Layout.fillWidth: true
                                                 }
                                             }
-                                            Rectangle {
-                                                height: root.s(20); width: tabBadgeText.implicitWidth + root.s(12); radius: root.s(10)
-                                                color: Qt.alpha(root[root.tabColors[card.tab]], 0.15)
-                                                border.color: Qt.alpha(root[root.tabColors[card.tab]], 0.4); border.width: 1
-                                                Text {
-                                                    id: tabBadgeText; anchors.centerIn: parent; text: root.tabNames[card.tab]
-                                                    font.family: "JetBrains Mono"; font.pixelSize: root.s(9)
-                                                    color: root[root.tabColors[card.tab]]
-                                                }
+                                            Badge {
+                                                scaleFunc: root.s
+                                                text: root.tabNames[card.tab]
+                                                accentColor: root[root.tabColors[card.tab]]
+                                                fontSize: 9
+                                                heightHint: 20
+                                                radiusHint: 10
+                                                borderAlpha: 0.4
                                             }
                                             Text {
                                                 text: "›"; font.family: "Inter"; font.pixelSize: root.s(18)
@@ -3046,27 +2976,17 @@ Item {
                                         anchors.left: parent.left; anchors.right: parent.right
                                         spacing: root.s(8)
 
-                                        Rectangle {
-                                            Layout.fillWidth: true; Layout.preferredHeight: root.s(32); radius: root.s(6)
-                                            color: root.surface0; border.color: cmdInputFocus.activeFocus ? root.green : root.surface2; border.width: 1
-                                            Behavior on border.color { ColorAnimation { duration: 150 } }
-                                            RowLayout {
-                                                anchors.fill: parent; anchors.leftMargin: root.s(10); anchors.rightMargin: root.s(10); spacing: root.s(8)
-                                                TextInput {
-                                                    id: cmdInputFocus
-                                                    Layout.fillWidth: true; Layout.fillHeight: true; verticalAlignment: TextInput.AlignVCenter
-                                                    font.family: "JetBrains Mono"; font.pixelSize: root.s(10); color: root.text; clip: true; selectByMouse: true
-                                                    text: model.command
-                                                    onTextChanged: dynamicStartupModel.setProperty(outerIndex, "command", text)
-                                                    Keys.onEscapePressed: { dynamicStartupModel.setProperty(outerIndex, "isEditing", false); root.forceActiveFocus(); }
-                                                    Text {
-                                                        anchors.left: parent.left; anchors.verticalCenter: parent.verticalCenter
-                                                        text: "e.g. waybar, dunst, nm-applet"
-                                                        color: Qt.alpha(root.subtext0, 0.45); visible: !parent.text && !parent.activeFocus
-                                                        font.family: "JetBrains Mono"; font.pixelSize: root.s(10)
-                                                    }
-                                                }
-                                            }
+                                        FocusInput {
+                                            id: cmdInputFocus
+                                            Layout.fillWidth: true; Layout.preferredHeight: root.s(32)
+                                            theme: root
+                                            scaleFunc: root.s
+                                            accentColor: root.green
+                                            fontSize: 10
+                                            placeholder: "e.g. waybar, dunst, nm-applet"
+                                            text: model.command
+                                            onTextChanged: dynamicStartupModel.setProperty(outerIndex, "command", text)
+                                            onEscapePressed: { dynamicStartupModel.setProperty(outerIndex, "isEditing", false); root.forceActiveFocus(); }
                                         }
 
                                         RowLayout {
