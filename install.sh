@@ -1662,10 +1662,10 @@ color_scheme_path=$HOME/.config/qt6ct/colors/matugen.conf
 custom_palette=true
 standard_dialogs=default
 style=Fusion
-stylesheets=$HOME/.config/qt6ct/qss/matugen-style.qss
+stylesheets=$HOME/.config/qt6ct/qss/matugen-style.qss,/usr/share/qt6ct/qss/traynotification-simple.qss
 
 [Interface]
-stylesheets=$HOME/.config/qt6ct/qss/matugen-style.qss
+stylesheets=$HOME/.config/qt6ct/qss/matugen-style.qss,/usr/share/qt6ct/qss/traynotification-simple.qss
 EOF
 
 printf "  -> Matugen GTK & Qt environment initialized %-4s ${C_GREEN}[ OK ]${RESET}\n" ""

@@ -24,14 +24,16 @@ Item {
     readonly property color mauve: _theme.mauve
     readonly property color sapphire: _theme.sapphire
     readonly property color red: _theme.red
+    readonly property color peach: _theme.peach
 
-    property string activeTab: "resources" // resources, processes, cores
-    readonly property var tabOrder: ["resources", "processes", "cores"]
+    property string activeTab: "resources" // resources, processes, cores, storage
+    readonly property var tabOrder: ["resources", "processes", "cores", "storage"]
 
     readonly property color tabColor: {
         if (activeTab === "resources") return window.mauve;
         if (activeTab === "processes") return window.sapphire;
-        return window.red;
+        if (activeTab === "cores") return window.red;
+        return window.peach;
     }
 
     property real introMain: 0
@@ -97,6 +99,7 @@ Item {
                                 ListElement { tabId: "resources"; icon: ""; label: "Resources" }
                                 ListElement { tabId: "processes"; icon: ""; label: "Processes" }
                                 ListElement { tabId: "cores"; icon: ""; label: "Cores" }
+                                ListElement { tabId: "storage"; icon: "󰋊"; label: "Storage" }
                             }
 
                             delegate: Item {
@@ -163,6 +166,16 @@ Item {
                         active: window.activeTab === "cores"
                         visible: active
                         source: "CoreGrid.qml"
+
+                        property var scaleFunc: window.s
+                        property var mochaColors: _theme
+                    }
+
+                    Loader {
+                        anchors.fill: parent
+                        active: window.activeTab === "storage"
+                        visible: active
+                        source: "Storage.qml"
 
                         property var scaleFunc: window.s
                         property var mochaColors: _theme
