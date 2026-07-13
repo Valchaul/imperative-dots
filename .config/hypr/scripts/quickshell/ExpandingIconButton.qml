@@ -4,8 +4,7 @@ import QtQuick.Layouts
 // Icon-only pill that expands leftward on hover to reveal a label next to a
 // fixed-position icon (right-anchored Row). Extracted from the DND toggle
 // (NotificationCenterPopup.qml) and the logout button (BatteryPopup.qml),
-// which had grown into byte-for-byte duplicates of each other (and of
-// themselves again in BatteryPopupAlt.qml).
+// which had grown into byte-for-byte duplicates of each other.
 //
 // color/border.color are left as plain overridable Rectangle properties
 // rather than baked into the component, since consumers differ on whether
