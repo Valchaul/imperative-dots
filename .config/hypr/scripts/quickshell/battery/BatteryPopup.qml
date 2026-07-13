@@ -423,58 +423,31 @@ Item {
                     }
 
                     // Expanding top-right logout icon
-                    Rectangle {
+                    ExpandingIconButton {
                         id: logoutBtn
                         anchors.top: parent.top; anchors.right: parent.right
                         anchors.margins: window.s(25)
-                        width: logoutMa.containsMouse ? window.s(44) + usernameText.implicitWidth + window.s(12) : window.s(44)
-                        height: window.s(44); radius: window.s(14)
-                        color: logoutMa.containsMouse ? window.surface1 : "transparent"
-                        border.color: logoutMa.containsMouse ? window.surface2 : "transparent"
-                        clip: true
-                        
+                        theme: window
+                        scaleFunc: window.s
+                        collapsedSize: 44
+                        radiusSize: 14
+                        rightPadding: 13
+                        itemSpacing: 12
+                        labelSize: 14
+                        icon: "󰍃"
+                        label: window.currentUserName
+                        color: containsMouse ? window.surface1 : "transparent"
+                        border.color: containsMouse ? window.surface2 : "transparent"
+                        iconColor: containsMouse ? window.red : window.overlay0
+                        labelColor: window.text
+
                         transform: Translate { y: window.s(-20) * (1.0 - introTop) }
                         opacity: introTop
 
-                        Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                        Row {
-                            anchors.right: parent.right
-                            anchors.rightMargin: window.s(13)
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: window.s(12)
-
-                            Text {
-                                id: usernameText
-                                text: window.currentUserName
-                                font.family: "JetBrains Mono"
-                                font.weight: Font.Bold
-                                font.pixelSize: window.s(14)
-                                color: window.text
-                                anchors.verticalCenter: parent.verticalCenter
-                                opacity: logoutMa.containsMouse ? 1.0 : 0.0
-                                Behavior on opacity { NumberAnimation { duration: 250 } }
-                            }
-
-                            Text {
-                                font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
-                                color: logoutMa.containsMouse ? window.red : window.overlay0
-                                text: "󰍃"
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                            }
-                        }
-
-                        MouseArea {
-                            id: logoutMa
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: { 
-                                exitAnim.start(); // Trigger graceful UI exit
-                                Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/exit.sh"]); 
-                                Quickshell.execDetached(["sh", "-c", "echo 'close' > " + paths.runDir + "/widget_state"]); 
-                            }
+                        onClicked: {
+                            exitAnim.start(); // Trigger graceful UI exit
+                            Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/exit.sh"]);
+                            Quickshell.execDetached(["sh", "-c", "echo 'close' > " + paths.runDir + "/widget_state"]);
                         }
                     }
 

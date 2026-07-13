@@ -335,14 +335,14 @@ draw_header() {
 EOF
     printf "${RESET}\n"
 
-    local OSC8_GH="\e]8;;https://github.com/ilyamiro/imperative-dots.git\a"
+    local OSC8_GH="\e]8;;https://github.com/Valchaul/imperative-dots.git\a"
     local OSC8_TW="\e]8;;https://twitter.com/ilyamirox\a"
     local OSC8_RD="\e]8;;https://reddit.com/u/ilyamiro1\a"
     local OSC8_KF="\e]8;;https://ko-fi.com/ilyamiro\a"
     local OSC8_END="\e]8;;\a"
 
     printf "\033[K${C_BLUE} -----------------------------------------------------------------${RESET}\n"
-    printf "\033[K${BOLD}${C_GREEN} GitHub:${RESET}  ${OSC8_GH}https://github.com/ilyamiro/imperative-dots.git${OSC8_END}\n"
+    printf "\033[K${BOLD}${C_GREEN} GitHub:${RESET}  ${OSC8_GH}https://github.com/Valchaul/imperative-dots.git${OSC8_END}\n"
     printf "\033[K${BOLD}${C_CYAN} Twitter:${RESET} ${OSC8_TW}@ilyamirox${OSC8_END}  |  ${BOLD}${C_RED}Reddit:${RESET} ${OSC8_RD}u/ilyamiro1${OSC8_END}\n"
     printf "\033[K${BOLD}${C_MAGENTA} Donate:${RESET}  ${OSC8_KF}Donate on Ko-fi (Help the project!)${OSC8_END}\n"
     printf "\033[K${C_BLUE} -----------------------------------------------------------------${RESET}\n"
@@ -911,7 +911,7 @@ prompt_optional_features_menu() {
     }
 
     if command -v jq &>/dev/null && command -v curl &>/dev/null; then
-        local UPDATES_JSON=$(curl -s "https://raw.githubusercontent.com/ilyamiro/imperative-dots/${TARGET_BRANCH}/updates.json" 2>/dev/null)
+        local UPDATES_JSON=$(curl -s "https://raw.githubusercontent.com/Valchaul/imperative-dots/${TARGET_BRANCH}/updates.json" 2>/dev/null)
         if [ -n "$UPDATES_JSON" ]; then
             
             # Extract all version numbers that have force_startup_overwrite set to true
@@ -1261,7 +1261,7 @@ fi
 
 # --- 3. Repository Cloning & Wallpapers ---
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting up Dotfiles Repository..."
-REPO_URL="https://github.com/ilyamiro/imperative-dots.git"
+REPO_URL="https://github.com/Valchaul/imperative-dots.git"
 CLONE_DIR="$HOME/.hyprland-dots"
 
 OLD_COMMIT=""

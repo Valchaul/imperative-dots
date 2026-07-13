@@ -164,130 +164,6 @@ Item {
         }
     }
 
-    // Static fill (a GPU-composited Rectangle whose height Behavior-animates on value
-    // change) replaces the Canvas-based liquid wave — no per-frame repaint while idle.
-    component LiquidSquare: Item {
-        id: ls
-        property real value: 0.0
-        property color colorBase: root.cSurface0
-        property color colorFill: root.cMauve
-        property string icon: ""
-        property string title: ""
-        property string valueText: ""
-        property string subText: ""
-
-        default property alias childItems: customContent.data
-
-        property real fillRatio: Math.max(0.0, Math.min(1.0, ls.value))
-
-        Rectangle {
-            anchors.fill: parent
-            radius: root.s(12)
-            color: ls.colorBase
-            border.color: root.alpha(root.cText, 0.08)
-            border.width: 1
-            clip: true
-
-            Rectangle {
-                id: fillRect
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.bottom: parent.bottom
-                height: parent.height * ls.fillRatio
-                visible: ls.value > 0
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.lighter(ls.colorFill, 1.25) }
-                    GradientStop { position: 1.0; color: ls.colorFill }
-                }
-                Behavior on height { NumberAnimation { duration: 800; easing.type: Easing.OutQuint } }
-            }
-        }
-
-        Item {
-            anchors.fill: parent
-            anchors.margins: root.s(12)
-
-            Text {
-                id: baseIcon
-                anchors.top: parent.top
-                anchors.left: parent.left
-                font.family: root.iconFont; font.pixelSize: root.s(16)
-                color: root.cSubtext0; text: ls.icon
-            }
-            Text {
-                anchors.verticalCenter: baseIcon.verticalCenter
-                anchors.right: parent.right
-                font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(10)
-                color: root.cSubtext0; text: ls.title
-            }
-            Text {
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.bottomMargin: root.s(4)
-                font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(12)
-                color: root.cSubtext0; text: ls.subText
-            }
-            Text {
-                anchors.bottom: parent.bottom
-                anchors.right: parent.right
-                font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: root.s(24)
-                color: root.cText; text: ls.valueText
-            }
-        }
-
-        Item {
-            id: fillTextClip
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: Math.min(parent.height, parent.height * ls.fillRatio)
-            clip: true
-            visible: ls.value > 0
-
-            Item {
-                anchors.bottom: parent.bottom
-                anchors.left: parent.left
-                anchors.right: parent.right
-                height: ls.height
-                anchors.margins: root.s(12)
-
-                Text {
-                    id: filledIcon
-                    anchors.top: parent.top
-                    anchors.left: parent.left
-                    font.family: root.iconFont; font.pixelSize: root.s(16)
-                    color: root.alpha(root.cCrust, 0.7); text: ls.icon
-                }
-                Text {
-                    anchors.verticalCenter: filledIcon.verticalCenter
-                    anchors.right: parent.right
-                    font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(10)
-                    color: root.alpha(root.cCrust, 0.7); text: ls.title
-                }
-                Text {
-                    anchors.bottom: parent.bottom
-                    anchors.left: parent.left
-                    anchors.bottomMargin: root.s(4)
-                    font.family: "JetBrains Mono"; font.bold: true; font.pixelSize: root.s(12)
-                    color: root.cCrust; text: ls.subText
-                }
-                Text {
-                    anchors.bottom: parent.bottom
-                    anchors.right: parent.right
-                    font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: root.s(24)
-                    color: root.cCrust; text: ls.valueText
-                }
-            }
-        }
-
-        Item {
-            id: customContent
-            anchors.fill: parent
-            anchors.margins: root.s(12)
-            z: 10
-        }
-    }
-
     Item {
         id: orientedRoot
         anchors.centerIn: parent
@@ -296,7 +172,14 @@ Item {
         rotation: root.counterRotation
         clip: false
 
-        LiquidSquare {
+        StatTile {
+            liquidWave: false
+            scaleFunc: root.s
+            colorBase: root.cSurface0
+            colorText: root.cText
+            colorSubtext: root.cSubtext0
+            colorCrust: root.cCrust
+            iconFont: root.iconFont
             x: root.cellX(0.0)
             y: root.cellY(0.0)
             width: root.cellW(0.0, 0.333)
@@ -309,7 +192,14 @@ Item {
             valueText: Math.round(root.cpuUsage * 100) + "%"
         }
 
-        LiquidSquare {
+        StatTile {
+            liquidWave: false
+            scaleFunc: root.s
+            colorBase: root.cSurface0
+            colorText: root.cText
+            colorSubtext: root.cSubtext0
+            colorCrust: root.cCrust
+            iconFont: root.iconFont
             x: root.cellX(0.333)
             y: root.cellY(0.0)
             width: root.cellW(0.333, 0.334)
@@ -322,7 +212,14 @@ Item {
             valueText: root.ramUsedGb.toFixed(1) + "G"
         }
 
-        LiquidSquare {
+        StatTile {
+            liquidWave: false
+            scaleFunc: root.s
+            colorBase: root.cSurface0
+            colorText: root.cText
+            colorSubtext: root.cSubtext0
+            colorCrust: root.cCrust
+            iconFont: root.iconFont
             x: root.cellX(0.667)
             y: root.cellY(0.0)
             width: root.cellW(0.667, 0.333)
@@ -335,7 +232,14 @@ Item {
             valueText: Math.round(root.tempC) + "°"
         }
 
-        LiquidSquare {
+        StatTile {
+            liquidWave: false
+            scaleFunc: root.s
+            colorBase: root.cSurface0
+            colorText: root.cText
+            colorSubtext: root.cSubtext0
+            colorCrust: root.cCrust
+            iconFont: root.iconFont
             x: root.cellX(0.0)
             y: root.cellY(0.5)
             width: root.cellW(0.0, 0.5)
@@ -349,7 +253,14 @@ Item {
             valueText: Math.round(root.diskUsagePercent * 100) + "%"
         }
 
-        LiquidSquare {
+        StatTile {
+            liquidWave: false
+            scaleFunc: root.s
+            colorBase: root.cSurface0
+            colorText: root.cText
+            colorSubtext: root.cSubtext0
+            colorCrust: root.cCrust
+            iconFont: root.iconFont
             x: root.cellX(0.5)
             y: root.cellY(0.5)
             width: root.cellW(0.5, 0.5)

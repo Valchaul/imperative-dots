@@ -204,54 +204,20 @@ Item {
                     Item { Layout.fillWidth: true } // Spacer
 
                     // DND Toggle Button
-                    Rectangle {
-                        Layout.preferredWidth: dndMa.containsMouse ? window.s(38) + dndText.implicitWidth + window.s(8) : window.s(38)
-                        Layout.preferredHeight: window.s(38)
-                        radius: window.s(12)
-                        color: window.dndEnabled ? Qt.alpha(window.red, 0.15) : (dndMa.containsMouse ? window.surface1 : "transparent")
-                        border.color: window.dndEnabled ? window.red : (dndMa.containsMouse ? window.surface2 : "transparent")
-                        border.width: 1
-                        clip: true
+                    ExpandingIconButton {
+                        theme: window
+                        scaleFunc: window.s
+                        collapsedSize: 38
+                        icon: window.dndEnabled ? "󰂛" : "󰂚"
+                        label: window.dndEnabled ? "Silent" : "Mute"
+                        color: window.dndEnabled ? Qt.alpha(window.red, 0.15) : (containsMouse ? window.surface1 : "transparent")
+                        border.color: window.dndEnabled ? window.red : (containsMouse ? window.surface2 : "transparent")
+                        iconColor: window.dndEnabled ? window.red : (containsMouse ? window.text : window.overlay0)
+                        labelColor: window.dndEnabled ? window.red : window.text
 
-                        Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        Behavior on border.color { ColorAnimation { duration: 150 } }
-
-                        Row {
-                            anchors.right: parent.right
-                            anchors.rightMargin: window.s(10)
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: window.s(8)
-
-                            Text {
-                                id: dndText
-                                text: window.dndEnabled ? "Silent" : "Mute"
-                                font.family: "JetBrains Mono"
-                                font.weight: Font.Bold
-                                font.pixelSize: window.s(13)
-                                color: window.dndEnabled ? window.red : window.text
-                                anchors.verticalCenter: parent.verticalCenter
-                                opacity: dndMa.containsMouse ? 1.0 : 0.0
-                                Behavior on opacity { NumberAnimation { duration: 250 } }
-                            }
-
-                            Text {
-                                font.family: "Iosevka Nerd Font"
-                                font.pixelSize: window.s(18)
-                                color: window.dndEnabled ? window.red : (dndMa.containsMouse ? window.text : window.overlay0)
-                                text: window.dndEnabled ? "󰂛" : "󰂚"
-                                anchors.verticalCenter: parent.verticalCenter
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                            }
-                        }
-
-                        MouseArea {
-                            id: dndMa
-                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                window.dndEnabled = !window.dndEnabled;
-                                Quickshell.execDetached(["sh", "-c", "echo '" + (window.dndEnabled ? "1" : "0") + "' > " + paths.getCacheDir("dnd") + "/state"]);
-                            }
+                        onClicked: {
+                            window.dndEnabled = !window.dndEnabled;
+                            Quickshell.execDetached(["sh", "-c", "echo '" + (window.dndEnabled ? "1" : "0") + "' > " + paths.getCacheDir("dnd") + "/state"]);
                         }
                     }
                 }

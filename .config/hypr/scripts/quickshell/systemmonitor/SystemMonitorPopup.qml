@@ -102,32 +102,21 @@ Item {
                                 ListElement { tabId: "storage"; icon: "󰋊"; label: "Storage" }
                             }
 
-                            delegate: Item {
+                            delegate: TabButton {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-
-                                RowLayout {
-                                    anchors.centerIn: parent
-                                    spacing: window.s(8)
-                                    Text {
-                                        font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(16)
-                                        color: window.activeTab === tabId ? window.crust : (tabMa.containsMouse ? window.text : window.subtext0)
-                                        text: icon
-                                        Behavior on color { ColorAnimation { duration: 200 } }
-                                    }
-                                    Text {
-                                        font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13)
-                                        color: window.activeTab === tabId ? window.crust : (tabMa.containsMouse ? window.text : window.subtext0)
-                                        text: label
-                                        Behavior on color { ColorAnimation { duration: 200 } }
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: tabMa
-                                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                    onClicked: window.activeTab = tabId
-                                }
+                                theme: window
+                                scaleFunc: window.s
+                                contentAlignment: "center"
+                                icon: model.icon
+                                label: model.label
+                                active: window.activeTab === model.tabId
+                                activeColor: window.crust
+                                inactiveColor: window.subtext0
+                                hoverColor: window.text
+                                activeFontWeight: Font.Black
+                                inactiveFontWeight: Font.Black
+                                onClicked: window.activeTab = model.tabId
                             }
                         }
                     }

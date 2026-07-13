@@ -20,6 +20,10 @@ Rectangle {
     property real pressScale: 0.97
     property bool clickable: true
     property bool hoverEnabled: true
+    // Cursor affordance only - independent of clickable, for cards that should
+    // always track hover (for visual feedback) but have no click action wired
+    // up, where a pointer cursor would be misleading. Defaults to clickable.
+    property bool cursorPointer: clickable
     readonly property bool containsMouse: cardMa.containsMouse
     readonly property bool pressed: cardMa.pressed
 
@@ -46,7 +50,7 @@ Rectangle {
         anchors.fill: parent
         hoverEnabled: hoverCard.hoverEnabled
         enabled: hoverCard.clickable
-        cursorShape: hoverCard.clickable ? Qt.PointingHandCursor : Qt.ArrowCursor
+        cursorShape: hoverCard.cursorPointer ? Qt.PointingHandCursor : Qt.ArrowCursor
         onClicked: hoverCard.clicked()
     }
 

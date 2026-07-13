@@ -906,18 +906,22 @@ Item {
 
                         Repeater {
                             model: calendarModel
-                            Rectangle {
+                            HoverCard {
+                                id: dayCard
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                
-                                color: isToday ? window.textAccent : (dayMa.containsMouse ? Qt.alpha(window.surface2, 0.4) : "transparent")
+                                theme: window
+                                scaleFunc: window.s
+                                cursorPointer: false // no click action wired up, just hover feedback
+
+                                // isToday always wins over hover, rather than the usual
+                                // hover-tint-over-base formula HoverCard defaults to.
+                                color: isToday ? window.textAccent : (dayCard.containsMouse ? Qt.alpha(window.surface2, 0.4) : "transparent")
                                 radius: Math.round(10 * window.sf)
-                                scale: dayMa.containsMouse ? 1.2 : 1.0
-                                border.color: isToday ? window.surface0 : (dayMa.containsMouse ? window.overlay0 : "transparent")
-                                border.width: isToday || dayMa.containsMouse ? 1 : 0
-                                
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                                hoverScale: 1.2
+                                pressScale: 1.2
+                                border.color: isToday ? window.surface0 : (dayCard.containsMouse ? window.overlay0 : "transparent")
+                                border.width: isToday || dayCard.containsMouse ? 1 : 0
 
                                 Text {
                                     anchors.centerIn: parent
@@ -928,8 +932,6 @@ Item {
                                     color: isToday ? window.base : (isCurrentMonth ? window.text : window.surface0)
                                     Behavior on color { ColorAnimation { duration: 200 } }
                                 }
-
-                                MouseArea { id: dayMa; anchors.fill: parent; hoverEnabled: true }
                             }
                         }
                     }
