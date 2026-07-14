@@ -184,7 +184,7 @@ Item {
         interval: 50
         running: true
         repeat: false
-        onTriggered: searchInput.forceActiveFocus()
+        onTriggered: searchInput.inputItem.forceActiveFocus()
     }
 
     Connections {
@@ -303,7 +303,7 @@ Item {
                         text: "󰅌"
                         font.family: "Iosevka Nerd Font"
                         font.pixelSize: window.s(18)
-                        color: searchInput.activeFocus ? window.mauve : window.subtext0
+                        color: searchInput.inputItem.activeFocus ? window.mauve : window.subtext0
                         
                         opacity: !window.previewMode ? 1 : 0
                         scale: !window.previewMode ? 1 : 0.5
@@ -332,20 +332,14 @@ Item {
                     }
                 }
 
-                TextField {
+                FocusInput {
                     id: searchInput
+                    theme: window
+                    scaleFunc: window.s
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    background: Item {} 
-                    color: window.text
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: window.s(16)
-                    
-                    placeholderText: "Search"
-                    placeholderTextColor: window.subtext0 
-                    
-                    verticalAlignment: TextInput.AlignVCenter
-                    focus: true
+                    placeholder: "Search"
+                    fontSize: 16
 
                     onTextChanged: {
                         if (window.previewMode) { window.previewMode = false; }
@@ -353,88 +347,84 @@ Item {
                         filterClips(text);
                     }
 
-                    Keys.onTabPressed: {
-                        if (clipModel.count > 0) {
-                            window.previewMode = !window.previewMode;
-                            if (window.previewMode) {
-                                window.updatePreviewText();
-                            }
-                        }
-                        event.accepted = true;
-                    }
+                    // Preview-toggle/grid-navigation keys can't be declared as
+                    // normal Keys.on* handlers from outside FocusInput's own
+                    // Item, so they're wired up imperatively against the
+                    // underlying TextInput's generic Keys.pressed signal instead.
+                    Component.onCompleted: {
+                        inputItem.Keys.pressed.connect(function(event) {
+                            if (event.key === Qt.Key_Tab) {
+                                if (clipModel.count > 0) {
+                                    window.previewMode = !window.previewMode;
+                                    if (window.previewMode) {
+                                        window.updatePreviewText();
+                                    }
+                                }
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Right) {
+                                window.previewMode = false;
+                                window.navDuration = 250;
+                                window.pendingIndex = -1;
 
-                    Keys.onRightPressed: {
-                        window.previewMode = false;
-                        window.navDuration = 250; 
-                        window.pendingIndex = -1;
-                        
-                        let targetIdx = clipList.currentIndex + 1;
-                        if (targetIdx < clipModel.count) { 
-                            clipList.currentIndex = targetIdx; 
-                        } else if (window.hasMore) {
-                            window.pendingIndex = targetIdx;
-                            window.loadMore();
-                        }
-                        event.accepted = true;
-                    }
-                    
-                    Keys.onLeftPressed: {
-                        window.previewMode = false;
-                        window.navDuration = 250;
-                        window.pendingIndex = -1;
-                        
-                        if (clipList.currentIndex > 0) { clipList.currentIndex--; }
-                        event.accepted = true;
-                    }
-                    
-                    Keys.onDownPressed: {
-                        if (window.previewMode && textPreviewFlickable.visible) {
-                            textPreviewFlickable.contentY = Math.min(textPreviewFlickable.contentY + window.s(60), Math.max(0, textPreviewFlickable.contentHeight - textPreviewFlickable.height));
-                        } else {
-                            window.previewMode = false;
-                            window.navDuration = 250;
-                            window.pendingIndex = -1;
-                            
-                            let targetIdx = clipList.currentIndex + mainBg.cols;
-                            if (targetIdx < clipModel.count) {
-                                clipList.currentIndex = targetIdx;
-                            } else if (window.hasMore) {
-                                window.pendingIndex = targetIdx;
-                                window.loadMore();
-                            } else {
-                                clipList.currentIndex = clipModel.count - 1;
+                                let targetIdx = clipList.currentIndex + 1;
+                                if (targetIdx < clipModel.count) {
+                                    clipList.currentIndex = targetIdx;
+                                } else if (window.hasMore) {
+                                    window.pendingIndex = targetIdx;
+                                    window.loadMore();
+                                }
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Left) {
+                                window.previewMode = false;
+                                window.navDuration = 250;
+                                window.pendingIndex = -1;
+
+                                if (clipList.currentIndex > 0) { clipList.currentIndex--; }
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Down) {
+                                if (window.previewMode && textPreviewFlickable.visible) {
+                                    textPreviewFlickable.contentY = Math.min(textPreviewFlickable.contentY + window.s(60), Math.max(0, textPreviewFlickable.contentHeight - textPreviewFlickable.height));
+                                } else {
+                                    window.previewMode = false;
+                                    window.navDuration = 250;
+                                    window.pendingIndex = -1;
+
+                                    let targetIdx = clipList.currentIndex + mainBg.cols;
+                                    if (targetIdx < clipModel.count) {
+                                        clipList.currentIndex = targetIdx;
+                                    } else if (window.hasMore) {
+                                        window.pendingIndex = targetIdx;
+                                        window.loadMore();
+                                    } else {
+                                        clipList.currentIndex = clipModel.count - 1;
+                                    }
+                                }
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Up) {
+                                if (window.previewMode && textPreviewFlickable.visible) {
+                                    textPreviewFlickable.contentY = Math.max(textPreviewFlickable.contentY - window.s(60), 0);
+                                } else {
+                                    window.previewMode = false;
+                                    window.navDuration = 250;
+                                    window.pendingIndex = -1;
+
+                                    if (clipList.currentIndex - mainBg.cols >= 0) { clipList.currentIndex -= mainBg.cols; }
+                                }
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                if (clipList.currentIndex >= 0 && clipList.currentIndex < clipModel.count) {
+                                    copyToClipboard(clipModel.get(clipList.currentIndex).id);
+                                }
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_Escape) {
+                                if (window.previewMode) {
+                                    window.previewMode = false;
+                                } else {
+                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                                }
+                                event.accepted = true;
                             }
-                        }
-                        event.accepted = true;
-                    }
-                    
-                    Keys.onUpPressed: {
-                        if (window.previewMode && textPreviewFlickable.visible) {
-                            textPreviewFlickable.contentY = Math.max(textPreviewFlickable.contentY - window.s(60), 0);
-                        } else {
-                            window.previewMode = false;
-                            window.navDuration = 250;
-                            window.pendingIndex = -1;
-                            
-                            if (clipList.currentIndex - mainBg.cols >= 0) { clipList.currentIndex -= mainBg.cols; }
-                        }
-                        event.accepted = true;
-                    }
-                    
-                    Keys.onReturnPressed: {
-                        if (clipList.currentIndex >= 0 && clipList.currentIndex < clipModel.count) {
-                            copyToClipboard(clipModel.get(clipList.currentIndex).id);
-                        }
-                        event.accepted = true;
-                    }
-                    
-                    Keys.onEscapePressed: {
-                        if (window.previewMode) {
-                            window.previewMode = false;
-                        } else {
-                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
-                        }
-                        event.accepted = true;
+                        });
                     }
                 }
             }

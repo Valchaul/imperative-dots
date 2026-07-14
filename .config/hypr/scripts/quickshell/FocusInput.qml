@@ -1,10 +1,9 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Text input box whose border lights up in the accent color on focus,
-// matching the pattern duplicated across the wallpaper dir / language
-// search / global search fields in SettingsPopup.qml, ClipboardManager.qml
-// and appLauncher.qml.
+// Text input box whose border/background lights up on focus. Used by
+// SettingsPopup.qml's wallpaper/language search fields, the wifi password
+// field in NetworkPopup.qml, and MovieWidget.qml's search field.
 Rectangle {
     id: focusInput
 
@@ -27,6 +26,7 @@ Rectangle {
     property bool selectByMouse: true
     property var validator: null
     property int echoMode: TextInput.Normal
+    property real hMargin: 9
 
     signal accepted()
     signal editingFinished()
@@ -44,7 +44,10 @@ Rectangle {
     TextInput {
         id: input
         anchors.fill: parent
-        anchors.margins: focusInput.s(9)
+        anchors.leftMargin: focusInput.s(focusInput.hMargin)
+        anchors.rightMargin: focusInput.s(focusInput.hMargin)
+        anchors.topMargin: focusInput.s(6)
+        anchors.bottomMargin: focusInput.s(6)
         verticalAlignment: TextInput.AlignVCenter
         font.family: focusInput.fontFamily
         font.pixelSize: focusInput.s(focusInput.fontSize)

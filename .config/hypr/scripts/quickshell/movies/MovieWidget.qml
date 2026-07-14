@@ -327,7 +327,7 @@ Item {
         id: focusTimer
         interval: 50; running: true; repeat: false
         onTriggered: {
-            if (window.currentView === "search") searchInput.forceActiveFocus()
+            if (window.currentView === "search") searchInput.inputItem.forceActiveFocus()
             else window.forceActiveFocus()
         }
     }
@@ -383,7 +383,7 @@ Item {
         } else if (window.currentView === "series") {
             if (event.key === Qt.Key_Escape) {
                 window.currentView = "search"
-                searchInput.forceActiveFocus()
+                searchInput.inputItem.forceActiveFocus()
                 event.accepted = true
             } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
                 let sCount = seasonModel.count
@@ -511,7 +511,7 @@ Item {
         window.isSourceModalOpen = false
         window.checkingState = "idle"
         if (window.currentView === "series") window.forceActiveFocus()
-        else searchInput.forceActiveFocus()
+        else searchInput.inputItem.forceActiveFocus()
         saveUiState()
     }
 
@@ -1155,67 +1155,75 @@ Item {
                             }
                         }
                     }
-                    TextField {
+                    FocusInput {
                         id: searchInput
+                        theme: window
+                        scaleFunc: window.s
                         Layout.fillWidth: true; Layout.preferredHeight: window.s(42)
-                        background: Rectangle {
-                            color: searchInput.activeFocus ? Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.6) : window.surface0
-                            radius: window.s(10); border.color: searchInput.activeFocus ? window.surface2 : "transparent"
-                            Behavior on color { ColorAnimation { duration: 200 } }
-                        }
-                        color: window.text; font.family: "JetBrains Mono"; font.pixelSize: window.s(15); leftPadding: window.s(15)
-                        placeholderText: "Search"
-                        placeholderTextColor: window.subtext0; verticalAlignment: TextInput.AlignVCenter
+                        radius: window.s(10)
+                        normalBorderColor: "transparent"
+                        accentColor: window.surface2
+                        normalBgColor: window.surface0
+                        focusBgColor: Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.6)
+                        fontSize: 15
+                        hMargin: 15
+                        placeholder: "Search"
+
                         onTextChanged: {
                             if (text.trim() === "") { searchResults.clear(); window.isSearchingNetwork = false; searchDebounceTimer.stop() }
                             else searchDebounceTimer.restart()
                         }
-                        Keys.onRightPressed: {
-                            window.isKeyboardNav = true; keyboardNavTimer.restart()
-                            let g = getActiveGrid()
-                            if (g && g.count > 0 && g.currentIndex < g.count - 1) g.currentIndex++
-                            event.accepted = true
-                        }
-                        Keys.onLeftPressed: {
-                            window.isKeyboardNav = true; keyboardNavTimer.restart()
-                            let g = getActiveGrid()
-                            if (g && g.count > 0 && g.currentIndex > 0) g.currentIndex--
-                            event.accepted = true
-                        }
-                        Keys.onDownPressed: {
-                            window.isKeyboardNav = true; keyboardNavTimer.restart()
-                            let g = getActiveGrid()
-                            if (g && g.count > 0) {
-                                let columns = Math.max(1, Math.floor(g.width / g.cellWidth))
-                                if (g.currentIndex + columns < g.count) g.currentIndex += columns
-                            }
-                            event.accepted = true
-                        }
-                        Keys.onUpPressed: {
-                            window.isKeyboardNav = true; keyboardNavTimer.restart()
-                            let g = getActiveGrid()
-                            if (g && g.count > 0) {
-                                let columns = Math.max(1, Math.floor(g.width / g.cellWidth))
-                                if (g.currentIndex - columns >= 0) g.currentIndex -= columns
-                            }
-                            event.accepted = true
-                        }
-                        Keys.onTabPressed: { window.mediaType = window.mediaType === "movie" ? "tv" : "movie"; if (text.trim() !== "") doSearch(text); event.accepted = true }
-                        Keys.onBacktabPressed: { window.mediaType = window.mediaType === "movie" ? "tv" : "movie"; if (text.trim() !== "") doSearch(text); event.accepted = true }
-                        Keys.onReturnPressed: {
-                            if (text.trim() !== "" && searchResults.count === 0 && !window.isSearchingNetwork) {
-                                doSearch(text)
-                            } else if (window.isKeyboardNav) {
-                                let g = getActiveGrid()
-                                if (g && g.count > 0 && g.currentIndex >= 0 && g.currentIndex < g.count) {
-                                    let item = g.model.get(g.currentIndex)
-                                    if (item) {
-                                        if (item.type === "movie") startSourceCheck("movie", item.imdbId, item.title, item.poster, 0, 0)
-                                        else loadSeriesDetails(item.imdbId, item.title, item.poster)
+
+                        // Grid-navigation and Movies/TV-switch keys can't be declared
+                        // as normal Keys.on* handlers from outside FocusInput's own
+                        // Item, so they're wired up imperatively against the
+                        // underlying TextInput's generic Keys.pressed signal instead.
+                        Component.onCompleted: {
+                            inputItem.Keys.pressed.connect(function(event) {
+                                if (event.key === Qt.Key_Right) {
+                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
+                                    let g = getActiveGrid()
+                                    if (g && g.count > 0 && g.currentIndex < g.count - 1) g.currentIndex++
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_Left) {
+                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
+                                    let g = getActiveGrid()
+                                    if (g && g.count > 0 && g.currentIndex > 0) g.currentIndex--
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_Down) {
+                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
+                                    let g = getActiveGrid()
+                                    if (g && g.count > 0) {
+                                        let columns = Math.max(1, Math.floor(g.width / g.cellWidth))
+                                        if (g.currentIndex + columns < g.count) g.currentIndex += columns
                                     }
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_Up) {
+                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
+                                    let g = getActiveGrid()
+                                    if (g && g.count > 0) {
+                                        let columns = Math.max(1, Math.floor(g.width / g.cellWidth))
+                                        if (g.currentIndex - columns >= 0) g.currentIndex -= columns
+                                    }
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                                    window.mediaType = window.mediaType === "movie" ? "tv" : "movie"; if (text.trim() !== "") doSearch(text); event.accepted = true
+                                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                    if (text.trim() !== "" && searchResults.count === 0 && !window.isSearchingNetwork) {
+                                        doSearch(text)
+                                    } else if (window.isKeyboardNav) {
+                                        let g = getActiveGrid()
+                                        if (g && g.count > 0 && g.currentIndex >= 0 && g.currentIndex < g.count) {
+                                            let item = g.model.get(g.currentIndex)
+                                            if (item) {
+                                                if (item.type === "movie") startSourceCheck("movie", item.imdbId, item.title, item.poster, 0, 0)
+                                                else loadSeriesDetails(item.imdbId, item.title, item.poster)
+                                            }
+                                        }
+                                    }
+                                    event.accepted = true
                                 }
-                            }
-                            event.accepted = true
+                            });
                         }
                     }
                 }
@@ -1435,7 +1443,7 @@ Item {
                     color: isHovered ? window.surface2 : window.surface1
                     Behavior on color { ColorAnimation { duration: 200 } }
                     Text { anchors.centerIn: parent; text: "← Back"; font.family: "JetBrains Mono"; font.pixelSize: window.s(14); font.weight: Font.Medium; color: window.text }
-                    MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { window.currentView = "search"; searchInput.forceActiveFocus(); saveUiState() } }
+                    MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { window.currentView = "search"; searchInput.inputItem.forceActiveFocus(); saveUiState() } }
                 }
                 Item { Layout.fillHeight: true }
             }

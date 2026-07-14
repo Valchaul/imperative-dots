@@ -906,7 +906,7 @@ Item {
                                         Item {
                                             Layout.fillWidth: true
                                             height: window.s(18)
-                                            
+
                                             Timer {
                                                 id: briCmdThrottle
                                                 interval: 50
@@ -919,44 +919,22 @@ Item {
                                                 }
                                             }
 
-                                            Rectangle {
+                                            SliderRow {
                                                 anchors.fill: parent
-                                                radius: window.s(9)
-                                                color: window.surface1
-                                                border.color: window.surface2
-                                                border.width: 1
-                                                clip: true
+                                                theme: window
+                                                scaleFunc: window.s
+                                                value: window.sysBrightness
+                                                fillColorStart: window.batColorStart
+                                                fillColorEnd: window.batColorEnd
+                                                suppressAnimation: window.isDraggingBri
 
-                                                Rectangle {
-                                                    height: parent.height
-                                                    width: parent.width * (window.sysBrightness / 100)
-                                                    radius: window.s(9)
-                                                    opacity: briMa.containsMouse ? 1.0 : 0.85
-                                                    Behavior on opacity { NumberAnimation { duration: 200 } }
-                                                    Behavior on width { enabled: !window.isDraggingBri; NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
-
-                                                    gradient: Gradient {
-                                                        orientation: Gradient.Horizontal
-                                                        GradientStop { position: 0.0; color: window.batColorStart; Behavior on color { ColorAnimation { duration: 300 } } }
-                                                        GradientStop { position: 1.0; color: window.batColorEnd; Behavior on color { ColorAnimation { duration: 300 } } }
-                                                    }
-                                                }
-                                            }
-                                            MouseArea {
-                                                id: briMa
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-                                                onPressed: (mouse) => { briSyncDelay.stop(); window.isDraggingBri = true; updateBri(mouse.x); }
-                                                onPositionChanged: (mouse) => { if (pressed) updateBri(mouse.x); }
-                                                onReleased: { briSyncDelay.restart(); }
-                                                
-                                                function updateBri(mx) {
-                                                    let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
-                                                    window.sysBrightness = pct; 
+                                                onDragStarted: { briSyncDelay.stop(); window.isDraggingBri = true; }
+                                                onDragMoved: (pct) => {
+                                                    window.sysBrightness = pct;
                                                     briCmdThrottle.targetPct = pct;
                                                     if (!briCmdThrottle.running) briCmdThrottle.start();
                                                 }
+                                                onDragEnded: briSyncDelay.restart()
                                             }
                                         }
                                     }
@@ -1001,7 +979,7 @@ Item {
                                         Item {
                                             Layout.fillWidth: true
                                             height: window.s(18)
-                                            
+
                                             Timer {
                                                 id: volCmdThrottle
                                                 interval: 50
@@ -1018,44 +996,24 @@ Item {
                                                 }
                                             }
 
-                                            Rectangle {
+                                            SliderRow {
                                                 anchors.fill: parent
-                                                radius: window.s(9)
-                                                color: window.surface1
-                                                border.color: window.surface2
-                                                border.width: 1
-                                                clip: true
+                                                theme: window
+                                                scaleFunc: window.s
+                                                value: window.sysVolume
+                                                fillColorStart: window.sysMuted ? window.surface2 : window.profileStart
+                                                fillColorEnd: window.sysMuted ? Qt.lighter(window.surface2, 1.15) : window.profileEnd
+                                                dimmed: window.sysMuted
+                                                dimOpacity: 0.5
+                                                suppressAnimation: window.isDraggingVol
 
-                                                Rectangle {
-                                                    height: parent.height
-                                                    width: parent.width * (window.sysVolume / 100)
-                                                    radius: window.s(9)
-                                                    opacity: window.sysMuted ? 0.5 : (volMa.containsMouse ? 1.0 : 0.85)
-                                                    Behavior on opacity { NumberAnimation { duration: 200 } }
-                                                    Behavior on width { enabled: !window.isDraggingVol; NumberAnimation { duration: 200; easing.type: Easing.OutQuint } }
-
-                                                    gradient: Gradient {
-                                                        orientation: Gradient.Horizontal
-                                                        GradientStop { position: 0.0; color: window.sysMuted ? window.surface2 : window.profileStart; Behavior on color { ColorAnimation { duration: 300 } } }
-                                                        GradientStop { position: 1.0; color: window.sysMuted ? Qt.lighter(window.surface2, 1.15) : window.profileEnd; Behavior on color { ColorAnimation { duration: 300 } } }
-                                                    }
-                                                }
-                                            }
-                                            MouseArea {
-                                                id: volMa
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-                                                onPressed: (mouse) => { volSyncDelay.stop(); window.isDraggingVol = true; updateVol(mouse.x); }
-                                                onPositionChanged: (mouse) => { if (pressed) updateVol(mouse.x); }
-                                                onReleased: { volSyncDelay.restart(); }
-                                                
-                                                function updateVol(mx) {
-                                                    let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
+                                                onDragStarted: { volSyncDelay.stop(); window.isDraggingVol = true; }
+                                                onDragMoved: (pct) => {
                                                     window.sysVolume = pct;
                                                     volCmdThrottle.targetPct = pct;
                                                     if (!volCmdThrottle.running) volCmdThrottle.start();
                                                 }
+                                                onDragEnded: volSyncDelay.restart()
                                             }
                                         }
                                     }

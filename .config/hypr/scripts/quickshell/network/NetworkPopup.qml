@@ -912,8 +912,10 @@ Item {
             }
 
             // ── Bluetooth: power-on-at-login toggle ──────────────────────
-            Rectangle {
+            HoverCard {
                 id: btStartupToggle
+                theme: window
+                scaleFunc: window.s
                 visible: window.btPresent && window.activeMode === "bt"
                 opacity: visible ? 1.0 : 0.0
                 Behavior on opacity { NumberAnimation { duration: 250 } }
@@ -922,17 +924,18 @@ Item {
                 anchors.left: parent.left
                 anchors.margins: window.s(20)
 
-                property bool isHovered: btStartupMa.containsMouse
                 width: btStartupRow.implicitWidth + window.s(24)
                 height: window.s(38)
-                radius: window.s(12)
                 clip: true
-                color: window.btStartupEnabled ? Qt.alpha(window.activeColor, 0.15) : (isHovered ? window.surface1 : "transparent")
-                border.color: window.btStartupEnabled ? window.activeColor : (isHovered ? window.surface2 : "transparent")
-                border.width: 1
+                hoverScale: 1.0
+                pressScale: 1.0
+                accentColor: window.activeColor
                 Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
-                Behavior on color { ColorAnimation { duration: 150 } }
-                Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                onClicked: {
+                    window.btStartupEnabled = !window.btStartupEnabled;
+                    Quickshell.execDetached(["sh", "-c", "echo '" + (window.btStartupEnabled ? "1" : "0") + "' > " + paths.getCacheDir("bluetooth") + "/on_startup"]);
+                }
 
                 Row {
                     id: btStartupRow
@@ -945,7 +948,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         font.family: "Iosevka Nerd Font"
                         font.pixelSize: window.s(16)
-                        color: window.btStartupEnabled ? window.activeColor : (btStartupToggle.isHovered ? window.text : window.overlay0)
+                        color: window.btStartupEnabled ? window.activeColor : (btStartupToggle.containsMouse ? window.text : window.overlay0)
                         text: "󰐥"
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
@@ -956,15 +959,6 @@ Item {
                         font.weight: Font.Bold
                         font.pixelSize: window.s(12)
                         color: window.btStartupEnabled ? window.activeColor : window.text
-                    }
-                }
-
-                MouseArea {
-                    id: btStartupMa
-                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        window.btStartupEnabled = !window.btStartupEnabled;
-                        Quickshell.execDetached(["sh", "-c", "echo '" + (window.btStartupEnabled ? "1" : "0") + "' > " + paths.getCacheDir("bluetooth") + "/on_startup"]);
                     }
                 }
             }
@@ -1397,35 +1391,32 @@ Item {
                                         color: window.crust; text: window.pendingWifiSsid; elide: Text.ElideRight 
                                     }
                                     
-                                    Rectangle {
+                                    FocusInput {
+                                        id: wifiPasswordField
+                                        theme: window
+                                        scaleFunc: window.s
                                         Layout.alignment: Qt.AlignHCenter
-                                        Layout.preferredWidth: pwdLayer.width - window.s(40); height: window.s(36)
+                                        Layout.fillWidth: false
+                                        Layout.preferredWidth: pwdLayer.width - window.s(40); Layout.preferredHeight: window.s(36)
                                         radius: window.s(18)
-                                        color: window.surface0
-                                        border.color: wifiPasswordField.activeFocus ? window.crust : "transparent"
-                                        border.width: 1
-                                        Behavior on border.color { ColorAnimation { duration: 200 } }
-                                        
-                                        TextInput {
-                                            id: wifiPasswordField
-                                            anchors.fill: parent
-                                            anchors.leftMargin: window.s(15); anchors.rightMargin: window.s(15)
-                                            verticalAlignment: TextInput.AlignVCenter
-                                            font.family: "JetBrains Mono"; font.pixelSize: window.s(13); color: window.text
-                                            echoMode: TextInput.Password; clip: true
-                                            onAccepted: {
-                                                if (text.trim() !== "") {
-                                                    window.connectDevice(window.activeMode, window.pendingWifiId, window.pendingWifiSsid, text);
-                                                    window.pendingWifiId = ""; window.pendingWifiSsid = ""; text = "";
-                                                    window.forceActiveFocus();
-                                                }
+                                        normalBorderColor: "transparent"
+                                        accentColor: window.crust
+                                        normalBgColor: window.surface0
+                                        fontSize: 13
+                                        hMargin: 15
+                                        echoMode: TextInput.Password
+                                        onAccepted: {
+                                            if (text.trim() !== "") {
+                                                window.connectDevice(window.activeMode, window.pendingWifiId, window.pendingWifiSsid, text);
+                                                window.pendingWifiId = ""; window.pendingWifiSsid = ""; text = "";
+                                                window.forceActiveFocus();
                                             }
-                                            Keys.onEscapePressed: { window.pendingWifiId = ""; window.pendingWifiSsid = ""; text = ""; window.forceActiveFocus(); }
                                         }
+                                        onEscapePressed: { window.pendingWifiId = ""; window.pendingWifiSsid = ""; text = ""; window.forceActiveFocus(); }
                                     }
                                 }
                                 
-                                Timer { id: deferFocusTimer; interval: 50; onTriggered: wifiPasswordField.forceActiveFocus() }
+                                Timer { id: deferFocusTimer; interval: 50; onTriggered: wifiPasswordField.inputItem.forceActiveFocus() }
                                 onVisibleChanged: { if (visible) { wifiPasswordField.text = ""; deferFocusTimer.start(); } }
                             }
 

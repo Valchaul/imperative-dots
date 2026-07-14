@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Layouts
 
 Item {
     id: tabButton
@@ -46,8 +45,16 @@ Item {
 
     readonly property color currentColor: active ? activeColor : (tabMa.containsMouse ? hoverColor : inactiveColor)
 
-    implicitWidth: contentRow.implicitWidth + s(leftPadding) * 2
-    implicitHeight: contentRow.implicitHeight
+    implicitWidth: s(iconColumnWidth) + s(spacing) + metricsText.implicitWidth + s(leftPadding) * 2
+    implicitHeight: s(iconColumnWidth)
+
+    Text {
+        id: metricsText
+        visible: false
+        text: tabButton.label
+        font.family: "JetBrains Mono"
+        font.pixelSize: tabButton.s(tabButton.labelSize)
+    }
 
     Rectangle {
         anchors.fill: parent
@@ -56,15 +63,11 @@ Item {
         Behavior on color { ColorAnimation { duration: 150 } }
     }
 
-    RowLayout {
-        id: contentRow
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.left: tabButton.contentAlignment === "left" ? parent.left : undefined
-        anchors.leftMargin: tabButton.contentAlignment === "left" ? tabButton.s(tabButton.leftPadding) : 0
-        anchors.right: tabButton.contentAlignment === "left" ? parent.right : undefined
-        anchors.rightMargin: tabButton.contentAlignment === "left" ? tabButton.s(tabButton.leftPadding) : 0
-        anchors.horizontalCenter: tabButton.contentAlignment === "center" ? parent.horizontalCenter : undefined
-        spacing: tabButton.s(tabButton.spacing)
+    // "left" mode: icon in a fixed-width column on the left, label filling
+    // the rest of the row.
+    Item {
+        visible: tabButton.contentAlignment === "left"
+        anchors.fill: parent
 
         transform: Translate {
             x: tabButton.active ? tabButton.s(tabButton.activeShift) : 0
@@ -72,8 +75,12 @@ Item {
         }
 
         Item {
-            Layout.preferredWidth: tabButton.s(tabButton.iconColumnWidth)
-            Layout.alignment: Qt.AlignVCenter
+            id: leftIconItem
+            width: tabButton.s(tabButton.iconColumnWidth)
+            height: parent.height
+            anchors.left: parent.left
+            anchors.leftMargin: tabButton.s(tabButton.leftPadding)
+
             Text {
                 anchors.centerIn: parent
                 text: tabButton.icon
@@ -91,8 +98,53 @@ Item {
             font.weight: tabButton.active ? tabButton.activeFontWeight : tabButton.inactiveFontWeight
             font.pixelSize: tabButton.s(tabButton.labelSize)
             color: tabButton.currentColor
-            Layout.fillWidth: tabButton.contentAlignment === "left"
-            Layout.alignment: Qt.AlignVCenter
+            Behavior on color { ColorAnimation { duration: 200 } }
+
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.left: leftIconItem.right
+            anchors.leftMargin: tabButton.s(tabButton.spacing)
+            anchors.right: parent.right
+            anchors.rightMargin: tabButton.s(tabButton.leftPadding)
+        }
+    }
+
+    // "center" mode: icon+label form a single Row, auto-sized to its content
+    // and centered as one unit, so both margins around the pair stay equal -
+    // anchoring the icon and label to each other independently (rather than
+    // as a group) left one side with extra space, per user report.
+    Row {
+        visible: tabButton.contentAlignment === "center"
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.horizontalCenter: parent.horizontalCenter
+        spacing: tabButton.s(tabButton.spacing)
+
+        transform: Translate {
+            x: tabButton.active ? tabButton.s(tabButton.activeShift) : 0
+            Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutExpo } }
+        }
+
+        Item {
+            width: tabButton.s(tabButton.iconColumnWidth)
+            height: centerLabel.implicitHeight
+
+            Text {
+                anchors.centerIn: parent
+                text: tabButton.icon
+                font.family: "Iosevka Nerd Font"
+                font.pixelSize: tabButton.s(tabButton.iconSize)
+                color: tabButton.currentColor
+                Behavior on color { ColorAnimation { duration: 200 } }
+            }
+        }
+
+        Text {
+            id: centerLabel
+            visible: tabButton.showLabel && tabButton.label !== ""
+            text: tabButton.label
+            font.family: "JetBrains Mono"
+            font.weight: tabButton.active ? tabButton.activeFontWeight : tabButton.inactiveFontWeight
+            font.pixelSize: tabButton.s(tabButton.labelSize)
+            color: tabButton.currentColor
             Behavior on color { ColorAnimation { duration: 200 } }
         }
     }

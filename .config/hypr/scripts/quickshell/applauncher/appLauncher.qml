@@ -162,7 +162,7 @@ Item {
         interval: 50
         running: true
         repeat: false
-        onTriggered: searchInput.forceActiveFocus()
+        onTriggered: searchInput.inputItem.forceActiveFocus()
     }
 
     Connections {
@@ -272,55 +272,53 @@ Item {
                     spacing: window.s(15)
 
                     Text {
-                        text: ""
+                        text: "󰍉"
                         font.family: "Iosevka Nerd Font"
                         font.pixelSize: window.s(18)
-                        color: searchInput.activeFocus ? window.mauve : window.subtext0
+                        color: searchInput.inputItem.activeFocus ? window.mauve : window.subtext0
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
 
-                    TextField {
+                    FocusInput {
                         id: searchInput
+                        theme: window
+                        scaleFunc: window.s
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        background: Item {} 
-                        color: window.text
-                        font.family: "JetBrains Mono"
-                        font.pixelSize: window.s(16)
-                        
-                        placeholderText: "Search..."
-                        placeholderTextColor: window.subtext0 
-                        
-                        verticalAlignment: TextInput.AlignVCenter
-                        focus: true
+                        placeholder: "Search..."
+                        fontSize: 16
 
                         onTextChanged: filterApps(text)
 
-                        Keys.onDownPressed: {
-                            window.isKeyboardNav = true;
-                            keyboardNavTimer.restart();
-                            if (appList.currentIndex < appModel.count - 1) {
-                                appList.currentIndex++;
-                            }
-                            event.accepted = true;
-                        }
-                        Keys.onUpPressed: {
-                            window.isKeyboardNav = true;
-                            keyboardNavTimer.restart();
-                            if (appList.currentIndex > 0) {
-                                appList.currentIndex--;
-                            }
-                            event.accepted = true;
-                        }
-                        Keys.onReturnPressed: {
-                            if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
-                                launchApp(appModel.get(appList.currentIndex).exec);
-                            }
-                            event.accepted = true;
-                        }
-                        Keys.onEscapePressed: {
-                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
-                            event.accepted = true;
+                        // Grid-navigation keys can't be declared as normal Keys.on*
+                        // handlers from outside FocusInput's own Item, so they're
+                        // wired up imperatively against the underlying TextInput's
+                        // generic Keys.pressed signal instead. Escape is deliberately
+                        // left unhandled here - it bubbles up to the root's identical
+                        // Keys.onEscapePressed (line ~178).
+                        Component.onCompleted: {
+                            inputItem.Keys.pressed.connect(function(event) {
+                                if (event.key === Qt.Key_Down) {
+                                    window.isKeyboardNav = true;
+                                    keyboardNavTimer.restart();
+                                    if (appList.currentIndex < appModel.count - 1) {
+                                        appList.currentIndex++;
+                                    }
+                                    event.accepted = true;
+                                } else if (event.key === Qt.Key_Up) {
+                                    window.isKeyboardNav = true;
+                                    keyboardNavTimer.restart();
+                                    if (appList.currentIndex > 0) {
+                                        appList.currentIndex--;
+                                    }
+                                    event.accepted = true;
+                                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                                    if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
+                                        launchApp(appModel.get(appList.currentIndex).exec);
+                                    }
+                                    event.accepted = true;
+                                }
+                            });
                         }
                     }
                 }

@@ -105,6 +105,7 @@ Item {
                             delegate: TabButton {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
+                                Layout.preferredWidth: 0
                                 theme: window
                                 scaleFunc: window.s
                                 contentAlignment: "center"

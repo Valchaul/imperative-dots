@@ -9,6 +9,7 @@ Item {
     id: root
 
     function s(val) { return typeof scaleFunc === "function" ? scaleFunc(val) : val; }
+    property color cBase: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.base : "#1e1e2e"
     property color cText: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.text : "#cdd6f4"
     property color cSubtext0: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.subtext0 : "#a6adc8"
     property color cSurface0: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.surface0 : "#313244"
@@ -18,6 +19,7 @@ Item {
     property color cBlue: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.blue : "#89b4fa"
     property color cPeach: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.peach : "#fab387"
     property color cGreen: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.green : "#a6e3a1"
+    property color cYellow: typeof mochaColors !== "undefined" && mochaColors ? mochaColors.yellow : "#f9e2af"
 
     property bool active: parent !== null && parent.visible !== undefined ? parent.visible : true
     property var drives: []
@@ -26,6 +28,7 @@ Item {
         if (kind === "hdd") return root.cMauve;
         if (kind === "nvme") return root.cBlue;
         if (kind === "usb") return root.cPeach;
+        if (kind === "sd") return root.cYellow;
         return root.cGreen; // sata/other ssd
     }
 
@@ -85,8 +88,10 @@ Item {
         ScrollBar.vertical: ScrollBar {}
 
         Flow {
-            width: root.width - root.s(4)
-            spacing: root.s(14)
+            x: root.s(20)
+            y: root.s(20)
+            width: root.width - root.s(40)
+            spacing: root.s(24)
 
             Repeater {
                 model: root.drives
@@ -98,10 +103,9 @@ Item {
                     theme: root
                     scaleFunc: root.s
                     radius: root.s(16)
-                    color: root.cSurface0
+                    baseColor: root.cSurface0
                     accentColor: root.kindColor(modelData.kind)
                     borderColorNormal: root.cSurface1
-                    hoverScale: 1.0
                     pressScale: 1.0
                     clickable: modelData.mountpoint !== ""
 
@@ -351,6 +355,89 @@ Item {
                                 }
                                 Component.onCompleted: requestPaint()
                             }
+
+                            // SD card: cut-corner card body + gold contact pins along the
+                            // top edge (same side as the bevel), body fills bottom-up
+                            // (below the pins) with used%.
+                            Canvas {
+                                id: sdCanvas
+                                anchors.fill: parent
+                                visible: modelData.kind === "sd"
+                                property real pct: modelData.pct || 0
+                                property color accent: root.kindColor(modelData.kind)
+                                onPctChanged: requestPaint()
+                                onAccentChanged: requestPaint()
+                                onPaint: {
+                                    let ctx = getContext("2d");
+                                    ctx.reset();
+
+                                    let cardW = width * 0.86;
+                                    let cardH = height * 0.88;
+                                    let cardX = (width - cardW) / 2;
+                                    let cardY = height * 0.02;
+                                    let bevel = cardW * 0.22;
+
+                                    function cardPath() {
+                                        ctx.beginPath();
+                                        ctx.moveTo(cardX, cardY);
+                                        ctx.lineTo(cardX + cardW - bevel, cardY);
+                                        ctx.lineTo(cardX + cardW, cardY + bevel);
+                                        ctx.lineTo(cardX + cardW, cardY + cardH);
+                                        ctx.lineTo(cardX, cardY + cardH);
+                                        ctx.closePath();
+                                    }
+
+                                    // Body
+                                    cardPath();
+                                    ctx.fillStyle = Qt.lighter(root.cSurface1, 1.2);
+                                    ctx.fill();
+
+                                    // Gold contact pins along the top edge, clipped to the
+                                    // card silhouette so the beveled corner overlaps/cuts
+                                    // into the last pin rather than sitting clear of it
+                                    let pinAreaH = cardH * 0.16;
+                                    let pinAreaY = cardY;
+                                    let pinCount = 8;
+                                    let pinGap = cardW * 0.02;
+                                    let pinW = (cardW - pinGap * (pinCount + 1)) / pinCount;
+                                    ctx.save();
+                                    cardPath();
+                                    ctx.clip();
+                                    ctx.fillStyle = "#d4af37";
+                                    for (let i = 0; i < pinCount; i++) {
+                                        let px = cardX + pinGap + i * (pinW + pinGap);
+                                        ctx.fillRect(px, pinAreaY, pinW, pinAreaH);
+                                    }
+                                    ctx.restore();
+
+                                    // Fill gauge below the pins, bottom-up with used%
+                                    let gaugeY = pinAreaY + pinAreaH + cardH * 0.06;
+                                    let gaugeH = (cardY + cardH) - cardH * 0.08 - gaugeY;
+                                    let gaugeW = cardW * 0.7;
+                                    let gaugeX = cardX + (cardW - gaugeW) / 2;
+                                    ctx.fillStyle = Qt.darker(root.cSurface0, 1.2);
+                                    ctx.fillRect(gaugeX, gaugeY, gaugeW, gaugeH);
+
+                                    let fillH = gaugeH * Math.max(0, Math.min(100, pct)) / 100;
+                                    ctx.fillStyle = accent;
+                                    ctx.fillRect(gaugeX, gaugeY + gaugeH - fillH, gaugeW, fillH);
+
+                                    ctx.strokeStyle = Qt.alpha(root.cText, 0.25);
+                                    ctx.lineWidth = 1;
+                                    ctx.strokeRect(gaugeX, gaugeY, gaugeW, gaugeH);
+
+                                    // Write-protect notch on the left edge
+                                    ctx.fillStyle = Qt.darker(root.cSurface0, 1.4);
+                                    ctx.fillRect(cardX, cardY + cardH * 0.6, cardW * 0.06, cardH * 0.08);
+
+                                    // Outline
+                                    cardPath();
+                                    ctx.strokeStyle = Qt.alpha(root.cText, 0.12);
+                                    ctx.lineWidth = 1;
+                                    ctx.stroke();
+                                }
+                                Component.onCompleted: requestPaint()
+                            }
                         }
 
                         // ── Info ───────────────────────────────────────
@@ -378,46 +465,58 @@ Item {
                                     elide: Text.ElideRight
                                 }
 
-                                Badge {
-                                    scaleFunc: root.s
-                                    text: modelData.kind
-                                    accentColor: root.kindColor(modelData.kind)
-                                    uppercase: true
-                                    fontSize: 9
-                                    heightHint: 19
+                                Text {
+                                    text: modelData.kind.toUpperCase()
+                                    font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(10)
+                                    color: root.kindColor(modelData.kind)
                                 }
                             }
 
-                            Text {
+                            Row {
                                 Layout.fillWidth: true
-                                text: root.fmtBytes(modelData.used) + " / " + root.fmtBytes(modelData.total)
-                                font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(11)
-                                color: root.cSubtext0
-                            }
-
-                            // Eject button - USB drives only
-                            HoverCard {
-                                visible: modelData.kind === "usb"
-                                Layout.fillWidth: true
-                                Layout.topMargin: root.s(4)
-                                Layout.preferredHeight: root.s(24)
-                                theme: root
-                                scaleFunc: root.s
-                                radius: root.s(7)
-                                accentColor: root.kindColor(modelData.kind)
-                                baseColor: root.kindColor(modelData.kind)
-                                baseBgAlpha: 0.12
-                                hoverBgAlpha: 0.22
-                                borderColorNormal: Qt.alpha(root.kindColor(modelData.kind), 0.45)
-                                hoverScale: 1.0
-                                pressScale: 1.0
-                                clickable: !ejectProc.running
+                                spacing: 0
 
                                 Text {
-                                    anchors.centerIn: parent
-                                    text: ejectProc.running ? "Ejecting…" : "Eject"
-                                    font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(10)
+                                    text: root.fmtBytes(modelData.used)
+                                    font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(11)
                                     color: root.kindColor(modelData.kind)
+                                }
+                                Text {
+                                    text: " / " + root.fmtBytes(modelData.total)
+                                    font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: root.s(11)
+                                    color: root.cSubtext0
+                                }
+                            }
+
+                            // Eject button - removable media only (USB / SD card). Same
+                            // gradient-filled pod look as the top bar's status pills
+                            // (e.g. the bluetooth pill), permanently "active" so its
+                            // accent-colored gradient always shows.
+                            StatusPill {
+                                id: ejectPill
+                                visible: modelData.kind === "usb" || modelData.kind === "sd"
+                                Layout.topMargin: root.s(4)
+                                Layout.alignment: Qt.AlignHCenter
+                                theme: root
+                                scaleFunc: root.s
+                                height: root.s(28)
+                                contentAlignment: "center"
+                                introTrigger: true
+                                active: true
+                                activeColorStart: root.kindColor(modelData.kind)
+                                enabled: !ejectProc.running
+
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: ""
+                                    font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(14)
+                                    color: root.cBase
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: ejectProc.running ? "Ejecting…" : "Eject"
+                                    font.family: "JetBrains Mono"; font.pixelSize: root.s(11); font.weight: Font.Black
+                                    color: root.cBase
                                 }
 
                                 Process {

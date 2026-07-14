@@ -558,35 +558,29 @@ Item {
                                         }
                                     }
 
-                                    Rectangle {
-                                        anchors.fill: parent; radius: window.s(12)
-                                        color: "#0dffffff"; border.color: "#1affffff"; border.width: 1
-                                        clip: true
-
-                                        Rectangle {
-                                            height: parent.height
-                                            width: parent.width * (Math.min(100, window.activeVol) / 100)
-                                            radius: window.s(12)
-                                            opacity: window.activeMute ? 0.3 : (masterSliderMa.containsMouse ? 1.0 : 0.85)
-                                            Behavior on opacity { NumberAnimation { duration: 200 } }
-                                            Behavior on width { enabled: !window.draggingMaster; NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
-
-                                            gradient: Gradient {
-                                                orientation: Gradient.Horizontal
-                                                GradientStop { position: 0.0; color: window.activeMute ? window.surface2 : window.tabColor; Behavior on color { ColorAnimation{duration: 300} } }
-                                                GradientStop { position: 1.0; color: window.activeMute ? Qt.lighter(window.surface2, 1.15) : Qt.lighter(window.tabColor, 1.25); Behavior on color { ColorAnimation{duration: 300} } }
-                                            }
-                                        }
-                                    }
-                                    
-                                    MouseArea {
-                                        id: masterSliderMa
-                                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                        onPressed: (mouse) => { syncDelay.stop(); window.draggingMaster = true; updateVol(mouse.x); applyPending(); }
-                                        onPositionChanged: (mouse) => { if (pressed) updateVol(mouse.x); }
-                                        onReleased: { syncDelay.restart(); audioPoller.running = true; applyPending(); }
+                                    SliderRow {
+                                        id: masterSliderRow
+                                        anchors.fill: parent
+                                        theme: window
+                                        scaleFunc: window.s
+                                        value: window.activeVol
+                                        trackColor: "#0dffffff"
+                                        trackBorderColor: "#1affffff"
+                                        fillColorStart: window.activeMute ? window.surface2 : window.tabColor
+                                        fillColorEnd: window.activeMute ? Qt.lighter(window.surface2, 1.15) : Qt.lighter(window.tabColor, 1.25)
+                                        dimmed: window.activeMute
+                                        animDuration: 300
+                                        suppressAnimation: window.draggingMaster
 
                                         property int pendingPct: -1
+
+                                        onDragStarted: { syncDelay.stop(); window.draggingMaster = true; Qt.callLater(masterSliderRow.applyPending); }
+                                        onDragMoved: (pct) => {
+                                            pendingPct = pct;
+                                            masterCmdThrottle.targetPct = pct;
+                                            if (!masterCmdThrottle.running) masterCmdThrottle.start();
+                                        }
+                                        onDragEnded: { syncDelay.restart(); audioPoller.running = true; applyPending(); }
 
                                         // Raw pointer-move events can fire far more often than the display
                                         // can render; only push into window.activeVol (which drives the Canvas
@@ -596,20 +590,12 @@ Item {
                                             id: masterVisualThrottle
                                             interval: 16
                                             repeat: true
-                                            running: masterSliderMa.pressed
-                                            onTriggered: masterSliderMa.applyPending()
+                                            running: masterSliderRow.pressed
+                                            onTriggered: masterSliderRow.applyPending()
                                         }
 
                                         function applyPending() {
                                             if (pendingPct >= 0 && pendingPct !== window.activeVol) window.activeVol = pendingPct;
-                                        }
-
-                                        function updateVol(mx) {
-                                            let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
-                                            pendingPct = pct;
-
-                                            masterCmdThrottle.targetPct = pct;
-                                            if (!masterCmdThrottle.running) masterCmdThrottle.start();
                                         }
                                     }
                                 }
@@ -887,37 +873,31 @@ Item {
                                             }
                                         }
 
-                                        Rectangle {
-                                            anchors.fill: parent; radius: window.s(7)
-                                            color: "#0dffffff"; border.color: "#1affffff"; border.width: 1
-                                            clip: true
-
-                                            Rectangle {
-                                                height: parent.height
-                                                width: parent.width * (Math.min(100, model.volume) / 100)
-                                                radius: window.s(7)
-                                                
-                                                // Heavily dimmed if muted, slightly dimmed if background node
-                                                opacity: model.mute ? 0.3 : (volSliderMa.containsMouse ? 0.7 : 0.4)
-                                                Behavior on opacity { NumberAnimation { duration: 200 } }
-                                                Behavior on width { enabled: !window.draggingNodes[model.id]; NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
-
-                                                gradient: Gradient {
-                                                    orientation: Gradient.Horizontal
-                                                    GradientStop { position: 0.0; color: model.mute ? window.surface2 : window.tabColor; Behavior on color { ColorAnimation { duration: 300 } } }
-                                                    GradientStop { position: 1.0; color: model.mute ? Qt.lighter(window.surface2, 1.15) : Qt.lighter(window.tabColor, 1.25); Behavior on color { ColorAnimation { duration: 300 } } }
-                                                }
-                                            }
-                                        }
-                                        
-                                        MouseArea {
-                                            id: volSliderMa
-                                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                            onPressed: (mouse) => { syncDelay.stop(); window.draggingNodes[model.id] = true; updateVol(mouse.x); applyPending(); }
-                                            onPositionChanged: (mouse) => { if (pressed) updateVol(mouse.x); }
-                                            onReleased: { syncDelay.restart(); audioPoller.running = true; applyPending(); }
+                                        SliderRow {
+                                            id: volSliderRow
+                                            anchors.fill: parent
+                                            theme: window
+                                            scaleFunc: window.s
+                                            value: model.volume
+                                            trackColor: "#0dffffff"
+                                            trackBorderColor: "#1affffff"
+                                            fillColorStart: model.mute ? window.surface2 : window.tabColor
+                                            fillColorEnd: model.mute ? Qt.lighter(window.surface2, 1.15) : Qt.lighter(window.tabColor, 1.25)
+                                            dimmed: model.mute
+                                            hoverOpacity: 0.7
+                                            normalOpacity: 0.4
+                                            animDuration: 300
+                                            suppressAnimation: !!window.draggingNodes[model.id]
 
                                             property int pendingPct: -1
+
+                                            onDragStarted: { syncDelay.stop(); window.draggingNodes[model.id] = true; Qt.callLater(volSliderRow.applyPending); }
+                                            onDragMoved: (pct) => {
+                                                pendingPct = pct;
+                                                volCmdThrottle.targetPct = pct;
+                                                if (!volCmdThrottle.running) volCmdThrottle.start();
+                                            }
+                                            onDragEnded: { syncDelay.restart(); audioPoller.running = true; applyPending(); }
 
                                             // Same rationale as the master slider: gate the list-model write
                                             // (which triggers a delegate re-layout) to once per frame instead
@@ -926,8 +906,8 @@ Item {
                                                 id: volVisualThrottle
                                                 interval: 16
                                                 repeat: true
-                                                running: volSliderMa.pressed
-                                                onTriggered: volSliderMa.applyPending()
+                                                running: volSliderRow.pressed
+                                                onTriggered: volSliderRow.applyPending()
                                             }
 
                                             function applyPending() {
@@ -939,14 +919,6 @@ Item {
                                                         break;
                                                     }
                                                 }
-                                            }
-
-                                            function updateVol(mx) {
-                                                let pct = Math.max(0, Math.min(100, Math.round((mx / width) * 100)));
-                                                pendingPct = pct;
-
-                                                volCmdThrottle.targetPct = pct;
-                                                if (!volCmdThrottle.running) volCmdThrottle.start();
                                             }
                                         }
                                     }

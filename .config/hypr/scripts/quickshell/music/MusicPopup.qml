@@ -1436,37 +1436,31 @@ Item {
     }
 
     // --- HELPER COMPONENT FOR PRESETS ---
-    component PresetButton : Rectangle {
+    component PresetButton : HoverCard {
+        id: presetBtn
         property string name: ""
+        theme: root
+        scaleFunc: root.s
         Layout.fillWidth: true
         Layout.preferredHeight: root.s(32)
         radius: root.s(8)
-        
+        border.width: 0
+
         property bool isActivePreset: root.eqData && root.eqData.preset === name
-        property bool isHovered: hoverMa.containsMouse
 
-        color: isActivePreset ? root.mauve : (isHovered ? root.surface1 : "#BF1E1E2E")
-        scale: isHovered && !isActivePreset ? 1.05 : 1.0
+        color: isActivePreset ? root.mauve : (containsMouse ? root.surface1 : "#BF1E1E2E")
+        scale: containsMouse && !isActivePreset ? 1.05 : 1.0
 
-        Behavior on color { ColorAnimation { duration: 200 } }
-        Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
+        onClicked: root.applyPresetOptimistically(name)
 
         Text {
             anchors.centerIn: parent
-            text: parent.name
-            color: parent.isActivePreset ? root.base : (parent.isHovered ? root.text : root.subtext0)
+            text: presetBtn.name
+            color: presetBtn.isActivePreset ? root.base : (presetBtn.containsMouse ? root.text : root.subtext0)
             font.family: "JetBrains Mono"
             font.pixelSize: root.s(12)
             font.bold: true
             Behavior on color { ColorAnimation { duration: 200 } }
-        }
-
-        MouseArea {
-            id: hoverMa
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.applyPresetOptimistically(parent.name)
         }
     }
 }

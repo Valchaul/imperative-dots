@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # One line per physical block device (real disks only - zram/loop excluded):
 # name<0x1f>kind<0x1f>model<0x1f>sizeBytes<0x1f>usedBytes<0x1f>fsTotalBytes<0x1f>mountpoint
-# kind is one of: hdd, nvme, usb, ssd (sata/other non-rotational fallback).
+# kind is one of: hdd, nvme, usb, sd, ssd (sata/other non-rotational fallback).
 # mountpoint is the "primary" mount for the whole disk ("/" if any partition
 # is the root, otherwise the first real mountpoint found) - empty if nothing
 # on this disk is currently mounted.
@@ -13,6 +13,9 @@ FS = "\x1f"
 
 
 def classify(dev):
+    name = dev.get("name") or ""
+    if name.startswith("mmcblk"):
+        return "sd"
     if dev.get("rm") or dev.get("tran") == "usb":
         return "usb"
     if dev.get("tran") == "nvme":
@@ -82,6 +85,7 @@ def main():
     # TEMP TEST MOCK - remove after visually checking the illustrations
     lines.append(FS.join(["sdz", "hdd", "Seagate BarraCuda 2TB", "2000000000000", "1200000000000", "1900000000000", "/mnt/test-hdd"]))
     lines.append(FS.join(["sdy", "usb", "SanDisk Ultra 64GB", "64000000000", "48000000000", "64000000000", "/run/media/useracc/SANDISK"]))
+    lines.append(FS.join(["mmcblk0", "sd", "SanDisk SDHC 32GB", "32000000000", "9000000000", "32000000000", "/run/media/useracc/SDCARD"]))
 
     print("\n".join(lines))
 

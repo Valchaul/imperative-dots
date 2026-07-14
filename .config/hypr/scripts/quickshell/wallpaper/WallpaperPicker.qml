@@ -1594,40 +1594,30 @@ Item {
                 }
             }
 
-            Rectangle {
+            IconTogglePill {
                 id: searchControlBtn
-                visible: window.currentFilter === "Search" && window.hasSearched
-                width: visible ? window.s(44) : 0
-                height: window.s(44)
-                radius: window.s(10)
-                clip: true
+                theme: _theme
+                scaleFunc: window.s
+                active: window.currentFilter === "Search" && window.hasSearched
+                size: 44
+                enabled: !window.isApplying
                 anchors.verticalCenter: parent.verticalCenter
                 color: window.isSearchPaused ? _theme.surface2 : "transparent"
                 border.color: window.isSearchPaused ? _theme.text : _theme.surface1
                 border.width: window.isSearchPaused ? window.s(2) : 1
-                
-                Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutBack; easing.overshoot: 0.5 } }
-                Behavior on color { ColorAnimation { duration: 400; easing.type: Easing.OutQuart } }
-                
-                MouseArea {
-                    id: scMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    enabled: !window.isApplying
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: window.isSearchPaused = !window.isSearchPaused
-                }
-                
+
+                onClicked: window.isSearchPaused = !window.isSearchPaused
+
                 Canvas {
                     width: window.s(44); height: window.s(44)
                     anchors.centerIn: parent
                     property bool paused: window.isSearchPaused
-                    property string activeColor: paused ? _theme.text : (scMouse.containsMouse ? _theme.text : Qt.rgba(_theme.text.r, _theme.text.g, _theme.text.b, 0.7))
+                    property string activeColor: paused ? _theme.text : (searchControlBtn.containsMouse ? _theme.text : Qt.rgba(_theme.text.r, _theme.text.g, _theme.text.b, 0.7))
                     onActiveColorChanged: requestPaint()
                     onPausedChanged: requestPaint()
                     property real scaleTrigger: window.s(1)
                     onScaleTriggerChanged: requestPaint()
-                    
+
                     onPaint: {
                         var ctx = getContext("2d");
                         var s = window.s;
@@ -1714,21 +1704,21 @@ Item {
                     anchors.right: submitBtn.left
                     anchors.rightMargin: window.s(8)
                     anchors.verticalCenter: parent.verticalCenter
-                    
+
                     opacity: window.currentFilter === "Search" ? 1.0 : 0.0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuad } }
-                    
+
                     color: _theme.text
                     font.family: "JetBrains Mono"
                     font.pixelSize: window.s(16)
                     clip: true
-                    
+
                     onTextEdited: {
                         window.hasSearched = false;
                         searchState.searched = false;
                     }
-                    
+
                     onAccepted: {
                         window.triggerOnlineSearch();
                         searchInput.focus = false;
