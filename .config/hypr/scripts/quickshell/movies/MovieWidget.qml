@@ -610,46 +610,64 @@ Item {
     }
 
     // --- DATA FETCHING & FILTERING ---
+    // Shared XHR helper: parses JSON responses (skipped when the body is
+    // empty, e.g. HEAD requests) and normalizes success/timeout/network-error
+    // into one onSuccess/onError pair, since call sites mostly differ only in
+    // what they do with the parsed result.
+    function fetchJson(url, options) {
+        options = options || {}
+        var xhr = new XMLHttpRequest()
+        xhr.open(options.method || "GET", url, true)
+        if (options.timeout) xhr.timeout = options.timeout
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    let data = xhr.responseText ? JSON.parse(xhr.responseText) : null
+                    if (options.onSuccess) options.onSuccess(data, xhr)
+                    return
+                } catch(e) {}
+            }
+            if (options.onError) options.onError(xhr)
+        }
+        xhr.ontimeout = function() { if (options.onError) options.onError(xhr) }
+        xhr.onerror = function() { if (options.onError) options.onError(xhr) }
+        xhr.send()
+        return xhr
+    }
+
     function fetchTrending(typeStr) {
         let isMovie = typeStr === "movie"
         if (isMovie) window.isFetchingMovies = true; else window.isFetchingTv = true
-        
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", "https://v3-cinemeta.strem.io/catalog/" + typeStr + "/top.json")
-        xhr.onerror = function() { if (isMovie) window.isFetchingMovies = false; else window.isFetchingTv = false }
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (isMovie) window.isFetchingMovies = false; else window.isFetchingTv = false
-            if (xhr.status === 200) {
-                try {
-                    let res = JSON.parse(xhr.responseText)
-                    if (res && res.metas) {
-                        let rawItems = []
-                        let targetModel = isMovie ? cachedTrendingMovies : cachedTrendingTv
-                        targetModel.clear()
-                        for (let i = 0; i < res.metas.length; i++) {
-                            let item = res.metas[i]
-                            if (!item.id || !item.poster) continue
-                            let entry = {
-                                imdbId: item.id,
-                                title: item.name || "Unknown",
-                                poster: item.poster || item.posterShape || item.background || item.logo || "",
-                                type: isMovie ? "movie" : "tv",
-                                year: item.releaseInfo || "N/A",
-                                rating: item.imdbRating || 0,
-                                popularity: i
-                            }
-                            rawItems.push(entry)
-                            targetModel.append(entry)
-                        }
-                        if (isMovie) { window.rawTrendingMovies = rawItems; window.trendingMoviesLastFetch = Date.now(); window.trendingMoviesLoaded = true } 
-                        else { window.rawTrendingTv = rawItems; window.trendingTvLastFetch = Date.now(); window.trendingTvLoaded = true }
-                        saveTrendingCache()
+
+        fetchJson("https://v3-cinemeta.strem.io/catalog/" + typeStr + "/top.json", {
+            onSuccess: function(res) {
+                if (isMovie) window.isFetchingMovies = false; else window.isFetchingTv = false
+                if (!res || !res.metas) return
+                let rawItems = []
+                let targetModel = isMovie ? cachedTrendingMovies : cachedTrendingTv
+                targetModel.clear()
+                for (let i = 0; i < res.metas.length; i++) {
+                    let item = res.metas[i]
+                    if (!item.id || !item.poster) continue
+                    let entry = {
+                        imdbId: item.id,
+                        title: item.name || "Unknown",
+                        poster: item.poster || item.posterShape || item.background || item.logo || "",
+                        type: isMovie ? "movie" : "tv",
+                        year: item.releaseInfo || "N/A",
+                        rating: item.imdbRating || 0,
+                        popularity: i
                     }
-                } catch(e) {}
-            }
-        }
-        xhr.send()
+                    rawItems.push(entry)
+                    targetModel.append(entry)
+                }
+                if (isMovie) { window.rawTrendingMovies = rawItems; window.trendingMoviesLastFetch = Date.now(); window.trendingMoviesLoaded = true }
+                else { window.rawTrendingTv = rawItems; window.trendingTvLastFetch = Date.now(); window.trendingTvLoaded = true }
+                saveTrendingCache()
+            },
+            onError: function() { if (isMovie) window.isFetchingMovies = false; else window.isFetchingTv = false }
+        })
     }
 
     function getSortValue(item, field) {
@@ -706,26 +724,20 @@ Item {
         addSearchHistory(query)
         window.isSearchingNetwork = true
         searchResults.clear()
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", "https://v3-cinemeta.strem.io/catalog/" + typeStr + "/top/search=" + q + ".json")
-        xhr.onerror = function() { window.isSearchingNetwork = false }
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (window.mediaType === expectedType) {
+        fetchJson("https://v3-cinemeta.strem.io/catalog/" + typeStr + "/top/search=" + q + ".json", {
+            onSuccess: function(res) {
+                if (window.mediaType !== expectedType) return
                 window.isSearchingNetwork = false
-                if (xhr.status === 200) {
-                    try {
-                        let res = JSON.parse(xhr.responseText)
-                        if (res && res.metas) {
-                            window.currentFetchResults = res.metas
-                            applyFiltersAndPopulate()
-                            enrichSearchPosters(res.metas, typeStr)
-                        }
-                    } catch(e) {}
-                }
+                if (!res || !res.metas) return
+                window.currentFetchResults = res.metas
+                applyFiltersAndPopulate()
+                enrichSearchPosters(res.metas, typeStr)
+            },
+            onError: function() {
+                if (window.mediaType !== expectedType) return
+                window.isSearchingNetwork = false
             }
-        }
-        xhr.send()
+        })
     }
 
     function enrichSearchPosters(metas, typeStr) {
@@ -734,42 +746,34 @@ Item {
             if (item.poster && item.poster !== "") continue
             let capturedImdbId = item.id
             ;(function(cImdbId) {
-                var xhr2 = new XMLHttpRequest()
-                xhr2.open("GET", "https://v3-cinemeta.strem.io/meta/" + typeStr + "/" + cImdbId + ".json")
-                xhr2.onreadystatechange = function() {
-                    if (xhr2.readyState !== XMLHttpRequest.DONE) return
-                    if (xhr2.status === 200) {
-                        try {
-                            let res2 = JSON.parse(xhr2.responseText)
-                            if (res2 && res2.meta) {
-                                let poster = res2.meta.poster || res2.meta.background || ""
-                                if (poster !== "") {
-                                    for (let j = 0; j < searchResults.count; j++) {
-                                        if (searchResults.get(j).imdbId === cImdbId) {
-                                            searchResults.setProperty(j, "poster", poster)
-                                            break
-                                        }
+                fetchJson("https://v3-cinemeta.strem.io/meta/" + typeStr + "/" + cImdbId + ".json", {
+                    onSuccess: function(res2) {
+                        if (res2 && res2.meta) {
+                            let poster = res2.meta.poster || res2.meta.background || ""
+                            if (poster !== "") {
+                                for (let j = 0; j < searchResults.count; j++) {
+                                    if (searchResults.get(j).imdbId === cImdbId) {
+                                        searchResults.setProperty(j, "poster", poster)
+                                        break
                                     }
-                                    return
                                 }
+                                return
                             }
-                        } catch(e) {}
-                    }
-                    fetchPosterFallback(cImdbId, typeStr)
-                }
-                xhr2.send()
+                        }
+                        fetchPosterFallback(cImdbId, typeStr)
+                    },
+                    onError: function() { fetchPosterFallback(cImdbId, typeStr) }
+                })
             })(capturedImdbId)
         }
     }
 
     function fetchPosterFallback(imdbId, typeStr) {
         let rpdbUrl = "https://api.ratingposterdb.com/imdb/poster-default/" + imdbId + ".jpg"
-        var xhrCheck = new XMLHttpRequest()
-        xhrCheck.open("HEAD", rpdbUrl, true)
-        xhrCheck.timeout = 5000
-        xhrCheck.onreadystatechange = function() {
-            if (xhrCheck.readyState !== XMLHttpRequest.DONE) return
-            if (xhrCheck.status === 200) {
+        fetchJson(rpdbUrl, {
+            method: "HEAD",
+            timeout: 5000,
+            onSuccess: function() {
                 for (let j = 0; j < searchResults.count; j++) {
                     if (searchResults.get(j).imdbId === imdbId) {
                         searchResults.setProperty(j, "poster", rpdbUrl)
@@ -777,38 +781,29 @@ Item {
                     }
                 }
             }
-        }
-        xhrCheck.onerror = function() { /* silently fail — delegate shows title fallback */ }
-        xhrCheck.send()
+            // onError intentionally omitted — silently fail, delegate shows title fallback
+        })
     }
 
     function fetchAndUpdatePoster(imdbId, typeStr, targetModel) {
-        var xhr = new XMLHttpRequest()
         let metaType = typeStr === "tv" ? "series" : "movie"
-        xhr.open("GET", "https://v3-cinemeta.strem.io/meta/" + metaType + "/" + imdbId + ".json")
-        xhr.timeout = 6000
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            let posterFound = ""
-            if (xhr.status === 200) {
-                try {
-                    let res = JSON.parse(xhr.responseText)
-                    if (res && res.meta) posterFound = res.meta.poster || res.meta.background || ""
-                } catch(e) {}
-            }
-            if (posterFound !== "") {
-                for (let j = 0; j < targetModel.count; j++) {
-                    if (targetModel.get(j).imdbId === imdbId) {
-                        targetModel.setProperty(j, "poster", posterFound)
-                        break
+        fetchJson("https://v3-cinemeta.strem.io/meta/" + metaType + "/" + imdbId + ".json", {
+            timeout: 6000,
+            onSuccess: function(res) {
+                let posterFound = (res && res.meta) ? (res.meta.poster || res.meta.background || "") : ""
+                if (posterFound !== "") {
+                    for (let j = 0; j < targetModel.count; j++) {
+                        if (targetModel.get(j).imdbId === imdbId) {
+                            targetModel.setProperty(j, "poster", posterFound)
+                            break
+                        }
                     }
+                } else {
+                    fetchPosterFallback(imdbId, metaType)
                 }
-            } else {
-                fetchPosterFallback(imdbId, metaType)
-            }
-        }
-        xhr.onerror = function() { fetchPosterFallback(imdbId, metaType) }
-        xhr.send()
+            },
+            onError: function() { fetchPosterFallback(imdbId, metaType) }
+        })
     }
 
     function fetchSeriesData(imdbId, targetSeason, title, poster, isReload) {
@@ -824,51 +819,45 @@ Item {
         seasonModel.clear()
         episodeModel.clear()
 
-        var xhr = new XMLHttpRequest()
-        xhr.open("GET", "https://v3-cinemeta.strem.io/meta/series/" + imdbId + ".json")
-        xhr.onerror = function() { 
+        function finishRequest() {
             window.isLoadingSeries = false
-            if (isReload && window.pendingSeriesFocusRestore) seriesFocusRestoreTimer.restart()
-        }
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            window.isLoadingSeries = false
-            if (xhr.status === 200) {
-                try {
-                    var res = JSON.parse(xhr.responseText)
-                    if (res && res.meta) {
-                        if (!isReload || !window.selectedDescription) window.selectedDescription = res.meta.description || res.meta.synopsis || ""
-                        if ((!window.selectedPoster || window.selectedPoster === "") && res.meta.poster) window.selectedPoster = res.meta.poster
-                        
-                        if (res.meta.videos) {
-                            let seasonsMap = {}
-                            for (let i = 0; i < res.meta.videos.length; i++) {
-                                let v = res.meta.videos[i]
-                                if (v.season === 0) continue
-                                if (!seasonsMap[v.season]) seasonsMap[v.season] = []
-                                let epTitle = v.name || v.title || null
-                                if (epTitle && /^(episode\s*\d+|s\d+e\d+|ep\.?\s*\d+)$/i.test(epTitle.toLowerCase().trim())) epTitle = null
-                                seasonsMap[v.season].push({
-                                    ep: v.episode,
-                                    title: epTitle || ("Episode " + v.episode),
-                                    hasRealTitle: epTitle !== null
-                                })
-                            }
-                            let seasonKeys = Object.keys(seasonsMap).map(Number).sort((a, b) => a - b)
-                            for (let i = 0; i < seasonKeys.length; i++) seasonModel.append({ seasonNum: seasonKeys[i] })
-                            window.seriesDataMap = seasonsMap
-                            
-                            let newTargetSeason = (isReload && seasonsMap[targetSeason]) ? targetSeason : (seasonKeys[0] || 1)
-                            window.currentSeason = newTargetSeason
-                            updateEpisodes(newTargetSeason)
-                        }
-                    }
-                } catch(e) {}
-            }
             if (isReload && window.pendingSeriesFocusRestore) seriesFocusRestoreTimer.restart()
             if (!isReload) saveUiState()
         }
-        xhr.send()
+
+        fetchJson("https://v3-cinemeta.strem.io/meta/series/" + imdbId + ".json", {
+            onSuccess: function(res) {
+                if (res && res.meta) {
+                    if (!isReload || !window.selectedDescription) window.selectedDescription = res.meta.description || res.meta.synopsis || ""
+                    if ((!window.selectedPoster || window.selectedPoster === "") && res.meta.poster) window.selectedPoster = res.meta.poster
+
+                    if (res.meta.videos) {
+                        let seasonsMap = {}
+                        for (let i = 0; i < res.meta.videos.length; i++) {
+                            let v = res.meta.videos[i]
+                            if (v.season === 0) continue
+                            if (!seasonsMap[v.season]) seasonsMap[v.season] = []
+                            let epTitle = v.name || v.title || null
+                            if (epTitle && /^(episode\s*\d+|s\d+e\d+|ep\.?\s*\d+)$/i.test(epTitle.toLowerCase().trim())) epTitle = null
+                            seasonsMap[v.season].push({
+                                ep: v.episode,
+                                title: epTitle || ("Episode " + v.episode),
+                                hasRealTitle: epTitle !== null
+                            })
+                        }
+                        let seasonKeys = Object.keys(seasonsMap).map(Number).sort((a, b) => a - b)
+                        for (let i = 0; i < seasonKeys.length; i++) seasonModel.append({ seasonNum: seasonKeys[i] })
+                        window.seriesDataMap = seasonsMap
+
+                        let newTargetSeason = (isReload && seasonsMap[targetSeason]) ? targetSeason : (seasonKeys[0] || 1)
+                        window.currentSeason = newTargetSeason
+                        updateEpisodes(newTargetSeason)
+                    }
+                }
+                finishRequest()
+            },
+            onError: finishRequest
+        })
     }
 
     function loadSeriesDetails(imdbId, title, poster) {
