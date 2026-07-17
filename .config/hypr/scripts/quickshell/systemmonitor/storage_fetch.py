@@ -82,11 +82,6 @@ def main():
 
         lines.append(FS.join([name, kind, model, str(size), str(used), str(fs_total), mountpoint]))
 
-    # TEMP TEST MOCK - remove after visually checking the illustrations
-    lines.append(FS.join(["sdz", "hdd", "Seagate BarraCuda 2TB", "2000000000000", "1200000000000", "1900000000000", "/mnt/test-hdd"]))
-    lines.append(FS.join(["sdy", "usb", "SanDisk Ultra 64GB", "64000000000", "48000000000", "64000000000", "/run/media/useracc/SANDISK"]))
-    lines.append(FS.join(["mmcblk0", "sd", "SanDisk SDHC 32GB", "32000000000", "9000000000", "32000000000", "/run/media/useracc/SDCARD"]))
-
     print("\n".join(lines))
 
 

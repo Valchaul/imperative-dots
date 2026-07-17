@@ -794,77 +794,26 @@ Item {
 
 
                             // 1. POWER PROFILES DOCK
-                            Rectangle {
+                            HorizontalTabBar {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: window.s(54)
-                                radius: window.s(14)
-                                color: window.surface0 
-                                border.color: window.surface1
-                                border.width: 1
-
                                 opacity: introProfiles
                                 transform: Translate { y: window.s(20) * (1.0 - introProfiles) }
-                                
-                                Rectangle {
-                                    id: sliderPill
-                                    width: (parent.width - window.s(2)) / 3 
-                                    height: parent.height - window.s(2)
-                                    y: window.s(1)
-                                    radius: window.s(10)
-                                    x: {
-                                        if (window.powerProfile === "performance") return window.s(1);
-                                        if (window.powerProfile === "balanced") return width + window.s(1);
-                                        return (width * 2) + window.s(1);
-                                    }
-                                    
-                                    Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
-                                    
-                                    gradient: Gradient {
-                                        orientation: Gradient.Horizontal
-                                        GradientStop { position: 0.0; color: window.profileStart; Behavior on color { ColorAnimation{duration:400} } }
-                                        GradientStop { position: 1.0; color: window.profileEnd; Behavior on color { ColorAnimation{duration:400} } }
-                                    }
-                                }
 
-                                RowLayout {
-                                    anchors.fill: parent
-                                    spacing: 0
-                                    
-                                    Repeater {
-                                        model: ListModel {
-                                            ListElement { name: "performance"; icon: "󰓅"; label: "Perform" } 
-                                            ListElement { name: "balanced"; icon: "󰗑"; label: "Balance" }   
-                                            ListElement { name: "power-saver"; icon: "󰌪"; label: "Saver" } 
-                                        }
-                                        
-                                        delegate: Item {
-                                            Layout.fillWidth: true
-                                            Layout.fillHeight: true
-                                            
-                                            RowLayout {
-                                                anchors.centerIn: parent
-                                                spacing: window.s(8)
-                                                Text {
-                                                    font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
-                                                    color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                                    text: icon
-                                                    Behavior on color { ColorAnimation { duration: 200 } }
-                                                }
-                                                Text {
-                                                    font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13)
-                                                    color: window.powerProfile === name ? window.crust : (profileMa.containsMouse ? window.text : window.subtext0)
-                                                    text: label
-                                                    Behavior on color { ColorAnimation { duration: 200 } }
-                                                }
-                                            }
-                                            
-                                            MouseArea {
-                                                id: profileMa
-                                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                                onClicked: { Quickshell.execDetached(["powerprofilesctl", "set", name]); sysPoller.running = true; }
-                                            }
-                                        }
-                                    }
+                                theme: window
+                                scaleFunc: window.s
+                                containerColor: window.surface0
+                                containerBorderColor: window.surface1
+                                accentColor: window.profileStart
+                                tabs: [
+                                    { tabId: "performance", icon: "󰓅", label: "Perform" },
+                                    { tabId: "balanced", icon: "󰗑", label: "Balance" },
+                                    { tabId: "power-saver", icon: "󰌪", label: "Saver" }
+                                ]
+                                activeTab: window.powerProfile
+                                onTabSelected: (tabId) => {
+                                    Quickshell.execDetached(["powerprofilesctl", "set", tabId]);
+                                    sysPoller.running = true;
                                 }
                             }
 

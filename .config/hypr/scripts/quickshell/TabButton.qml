@@ -41,7 +41,18 @@ Item {
     property color hoverBgColor: "transparent"
     property real backgroundRadius: 8
 
+    // Subtle press-down feedback, independent of any hover/active tint.
+    property real pressScale: 0.95
+
     signal clicked()
+
+    scale: tabMa.pressed ? pressScale : 1.0
+    // Snap down instantly on press (so even a fast click registers the dip),
+    // then ease back out on release.
+    Behavior on scale {
+        enabled: !tabMa.pressed
+        NumberAnimation { duration: 200; easing.type: Easing.OutBack }
+    }
 
     readonly property color currentColor: active ? activeColor : (tabMa.containsMouse ? hoverColor : inactiveColor)
 
@@ -155,5 +166,6 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: tabButton.clicked()
+        onPressedChanged: console.log("DIAG tabButton label=" + tabButton.label + " pressed=" + pressed + " scale=" + tabButton.scale)
     }
 }

@@ -1158,27 +1158,19 @@ Item {
                                             text: Config.sddmWallpaperPath
                                             onTextChanged: Config.sddmWallpaperPath = text
                                         }
-                                        Rectangle {
+                                        ActionButton {
                                             Layout.preferredWidth: root.s(80); Layout.preferredHeight: root.s(34)
-                                            radius: root.s(7)
-                                            color: applyLoginWpMa.containsMouse ? Qt.alpha(root.mauve, 0.25) : Qt.alpha(root.mauve, 0.15)
-                                            border.color: root.mauve; border.width: 1
-                                            Behavior on color { ColorAnimation { duration: 150 } }
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: sddmApplyProc.running ? "…" : "Apply"
-                                                font.family: "Inter"; font.weight: Font.Medium; font.pixelSize: root.s(12)
-                                                color: root.mauve
-                                            }
-                                            MouseArea {
-                                                id: applyLoginWpMa
-                                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                                enabled: loginWpInput.text.length > 0 && !sddmApplyProc.running
-                                                onClicked: {
-                                                    sddmApplyStatus.text = "";
-                                                    sddmApplyProc.running = false;
-                                                    sddmApplyProc.running = true;
-                                                }
+                                            theme: root
+                                            scaleFunc: root.s
+                                            label: "Apply"
+                                            labelSize: 12
+                                            accentColor: root.mauve
+                                            busy: sddmApplyProc.running
+                                            enabled: loginWpInput.text.length > 0
+                                            onClicked: {
+                                                sddmApplyStatus.text = "";
+                                                sddmApplyProc.running = false;
+                                                sddmApplyProc.running = true;
                                             }
                                         }
                                     }
@@ -2071,38 +2063,22 @@ Item {
                                             }
                                         }
                                         // Save button
-                                        Rectangle {
-                                            Layout.preferredWidth: root.s(80); Layout.preferredHeight: root.s(30); radius: root.s(7)
-                                            color: rowSaveMa.containsMouse ? root.green : root.surface1
-                                            border.color: rowSaveMa.containsMouse ? root.green : Qt.alpha(root.green, 0.4)
-                                            border.width: 1
-                                            Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutExpo } }
-                                            Behavior on border.color { ColorAnimation { duration: 180 } }
-                                            RowLayout {
-                                                anchors.centerIn: parent; spacing: root.s(6)
-                                                Text {
-                                                    text: "󰆓"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(14)
-                                                    color: rowSaveMa.containsMouse ? root.base : root.green
-                                                    Behavior on color { ColorAnimation { duration: 180 } }
+                                        ActionButton {
+                                            Layout.preferredWidth: root.s(80); Layout.preferredHeight: root.s(30)
+                                            theme: root
+                                            scaleFunc: root.s
+                                            icon: "󰆓"
+                                            label: "Save"
+                                            accentColor: root.green
+                                            onClicked: {
+                                                let validationResult = root.validateKeybind(outerIndex, model.mods, model.key, model.dispatcher, model.command);
+                                                if (validationResult !== "VALID") {
+                                                    Quickshell.execDetached(["notify-send", "-u", "critical", "Keybind Error", validationResult]);
+                                                    return;
                                                 }
-                                                Text {
-                                                    text: "Save"; font.family: "JetBrains Mono"; font.pixelSize: root.s(10); font.weight: Font.Medium
-                                                    color: rowSaveMa.containsMouse ? root.base : root.green
-                                                    Behavior on color { ColorAnimation { duration: 180 } }
-                                                }
-                                            }
-                                            MouseArea {
-                                                id: rowSaveMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                                onClicked: {
-                                                    let validationResult = root.validateKeybind(outerIndex, model.mods, model.key, model.dispatcher, model.command);
-                                                    if (validationResult !== "VALID") { 
-                                                        Quickshell.execDetached(["notify-send", "-u", "critical", "Keybind Error", validationResult]); 
-                                                        return; 
-                                                    }
-                                                    dynamicKeybindsModel.setProperty(outerIndex, "isEditing", false);
-                                                    root.forceActiveFocus();
-                                                    root.saveAllKeybinds();
-                                                }
+                                                dynamicKeybindsModel.setProperty(outerIndex, "isEditing", false);
+                                                root.forceActiveFocus();
+                                                root.saveAllKeybinds();
                                             }
                                         }
                                     }
@@ -2327,62 +2303,28 @@ Item {
                     Item { Layout.fillWidth: true }
 
                     // Save button
-                    Rectangle {
-                        id: headerSaveBtn
+                    ActionButton {
                         visible: root.currentTab !== 2 && root.currentTab !== 4 && !root.isSearchMode
                         opacity: visible ? 1.0 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutExpo } }
 
                         Layout.alignment: Qt.AlignVCenter
                         Layout.preferredHeight: root.s(34)
-                        Layout.preferredWidth: saveBtnRow.implicitWidth + root.s(28)
 
-                        radius: root.s(8)
-                        scale: headerSaveMa.pressed ? 0.94 : (headerSaveMa.containsMouse ? 1.03 : 1.0)
-                        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
-
-                        color: headerSaveMa.pressed
-                            ? Qt.darker(root.mauve, 1.15)
-                            : (headerSaveMa.containsMouse ? root.mauve : root.surface1)
-                        border.color: headerSaveMa.containsMouse ? root.mauve : Qt.alpha(root.mauve, 0.4)
-                        border.width: 1
-                        Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutExpo } }
-                        Behavior on border.color { ColorAnimation { duration: 180 } }
-
-                        RowLayout {
-                            id: saveBtnRow
-                            anchors.centerIn: parent
-                            spacing: root.s(7)
-                            Text { 
-                                text: "󰆓"
-                                font.family: "Iosevka Nerd Font"
-                                font.pixelSize: root.s(15)
-                                color: headerSaveMa.containsMouse ? root.base : root.mauve
-                                Behavior on color { ColorAnimation { duration: 180 } }
-                            }
-                            Text { 
-                                text: "Save"
-                                font.family: "JetBrains Mono"
-                                font.weight: Font.Bold
-                                font.pixelSize: root.s(12)
-                                color: headerSaveMa.containsMouse ? root.base : root.text
-                                Behavior on color { ColorAnimation { duration: 180 } }
-                            }
-                        }
-
-                        MouseArea {
-                            id: headerSaveMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (root.currentTab === 0) Config.saveAppSettings();
-                                else if (root.currentTab === 1) Config.saveWeatherConfig();
-                                else if (root.currentTab === 3) Config.applyMonitors();
-                                else if (root.currentTab === 5) Config.saveAppSettings();
-                                else if (root.currentTab === 6) Config.saveAppSettings();
-                                else if (root.currentTab === 7) Config.saveAppSettings();
-                            }
+                        theme: root
+                        scaleFunc: root.s
+                        icon: "󰆓"
+                        label: "Save"
+                        labelSize: 12
+                        fontWeight: Font.Bold
+                        accentColor: root.mauve
+                        onClicked: {
+                            if (root.currentTab === 0) Config.saveAppSettings();
+                            else if (root.currentTab === 1) Config.saveWeatherConfig();
+                            else if (root.currentTab === 3) Config.applyMonitors();
+                            else if (root.currentTab === 5) Config.saveAppSettings();
+                            else if (root.currentTab === 6) Config.saveAppSettings();
+                            else if (root.currentTab === 7) Config.saveAppSettings();
                         }
                     }
 
@@ -3785,6 +3727,24 @@ Item {
                         accentColor: root.peach
                         checked: Config.batteryPillShowTime
                         onToggled: Config.batteryPillShowTime = !Config.batteryPillShowTime
+                    }
+
+
+                    ToggleBox {
+                        theme: root; scaleFunc: root.s
+                        icon: "󰖂"; label: "Mullvad VPN"; description: "Show Mullvad status in topbar"
+                        accentColor: root.green
+                        checked: Config.mullvadEnabled
+                        onToggled: Config.mullvadEnabled = !Config.mullvadEnabled
+                    }
+
+
+                    ToggleBox {
+                        theme: root; scaleFunc: root.s
+                        icon: "󱗼"; label: "Tailscale VPN"; description: "Show Tailscale status in topbar"
+                        accentColor: root.green
+                        checked: Config.tailscaleEnabled
+                        onToggled: Config.tailscaleEnabled = !Config.tailscaleEnabled
                     }
         }
     }

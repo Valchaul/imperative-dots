@@ -27,7 +27,6 @@ Item {
     readonly property color peach: _theme.peach
 
     property string activeTab: "resources" // resources, processes, cores, storage
-    readonly property var tabOrder: ["resources", "processes", "cores", "storage"]
 
     readonly property color tabColor: {
         if (activeTab === "resources") return window.mauve;
@@ -67,60 +66,20 @@ Item {
                 // ==========================================
                 // TABS
                 // ==========================================
-                Rectangle {
+                HorizontalTabBar {
                     Layout.fillWidth: true
                     Layout.preferredHeight: window.s(48)
-                    radius: window.s(12)
-                    color: "#0dffffff"
-                    border.color: "#1affffff"
-                    border.width: 1
-
-                    Rectangle {
-                        width: (parent.width - window.s(2)) / window.tabOrder.length
-                        height: parent.height - window.s(2)
-                        y: window.s(1)
-                        radius: window.s(9)
-                        x: (width * window.tabOrder.indexOf(window.activeTab)) + window.s(1)
-                        Behavior on x { NumberAnimation { duration: 400; easing.type: Easing.OutBack; easing.overshoot: 1.1 } }
-
-                        gradient: Gradient {
-                            orientation: Gradient.Horizontal
-                            GradientStop { position: 0.0; color: window.tabColor; Behavior on color { ColorAnimation { duration: 300 } } }
-                            GradientStop { position: 1.0; color: Qt.lighter(window.tabColor, 1.15); Behavior on color { ColorAnimation { duration: 300 } } }
-                        }
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        spacing: 0
-
-                        Repeater {
-                            model: ListModel {
-                                ListElement { tabId: "resources"; icon: ""; label: "Resources" }
-                                ListElement { tabId: "processes"; icon: ""; label: "Processes" }
-                                ListElement { tabId: "cores"; icon: ""; label: "Cores" }
-                                ListElement { tabId: "storage"; icon: "󰋊"; label: "Storage" }
-                            }
-
-                            delegate: TabButton {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                Layout.preferredWidth: 0
-                                theme: window
-                                scaleFunc: window.s
-                                contentAlignment: "center"
-                                icon: model.icon
-                                label: model.label
-                                active: window.activeTab === model.tabId
-                                activeColor: window.crust
-                                inactiveColor: window.subtext0
-                                hoverColor: window.text
-                                activeFontWeight: Font.Black
-                                inactiveFontWeight: Font.Black
-                                onClicked: window.activeTab = model.tabId
-                            }
-                        }
-                    }
+                    theme: window
+                    scaleFunc: window.s
+                    accentColor: window.tabColor
+                    tabs: [
+                        { tabId: "resources", icon: "", label: "Resources" },
+                        { tabId: "processes", icon: "", label: "Processes" },
+                        { tabId: "cores", icon: "", label: "Cores" },
+                        { tabId: "storage", icon: "󰋊", label: "Storage" }
+                    ]
+                    activeTab: window.activeTab
+                    onTabSelected: (tabId) => window.activeTab = tabId
                 }
 
                 // ==========================================

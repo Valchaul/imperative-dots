@@ -156,7 +156,7 @@ Item {
 
     function playSfx(filename) {
         try {
-            let rawUrl = Qt.resolvedUrl("sounds/" + filename).toString();
+            let rawUrl = Qt.resolvedUrl("../sounds/" + filename).toString();
             let cleanPath = rawUrl;
             if (cleanPath.indexOf("file://") === 0) cleanPath = cleanPath.substring(7); 
             let cmd = "pw-play '" + cleanPath + "' 2>/dev/null || paplay '" + cleanPath + "' 2>/dev/null";
@@ -192,6 +192,24 @@ Item {
     property string activeMode: "bt"
     readonly property color activeColor: activeMode === "bt" ? window.btAccent : window.sharedAccent
     readonly property color activeGradientSecondary: Qt.darker(window.activeColor, 1.25)
+
+    readonly property var tabsModel: {
+        let tabs = [];
+        if (window.ethPresent) tabs.push({ tabId: "eth", icon: "󰈀", label: "Ethernet" });
+        if (window.wifiPresent) tabs.push({ tabId: "wifi", icon: "󰤨", label: "Wi-Fi" });
+        if (window.btPresent) tabs.push({ tabId: "bt", icon: "󰂯", label: "Bluetooth" });
+        return tabs;
+    }
+
+    function selectTab(mode) {
+        if (window.pendingWifiId !== "") { window.pendingWifiId = ""; window.pendingWifiSsid = ""; }
+        if (window.activeMode !== mode) {
+            window.powerAnimAllowed = false;
+            powerAnimBlocker.restart();
+            window.playSfx("switch.wav");
+            window.activeMode = mode;
+        }
+    }
 
     property var busyTasks: ({})
     property var disconnectingDevices: ({})
@@ -2130,162 +2148,21 @@ Item {
                 }
             }
 
-            Rectangle {
-                id: bottomTabsContainer
+            HorizontalTabBar {
                 anchors.bottom: parent.bottom
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottomMargin: window.s(25)
                 width: window.s(360)
                 height: window.s(54)
-                radius: window.s(14)
-                color: "#1affffff" 
-                border.color: "#1affffff"
-                border.width: 1
                 visible: window.ethPresent || window.wifiPresent || window.btPresent
-
-                // The Morphing Highlight Pill
-                Rectangle {
-                    id: activeTabHighlight
-                    y: window.s(6)
-                    height: bottomTabsContainer.height - window.s(12)
-                    radius: window.s(10)
-                    z: 0
-
-                    property int prevIdx: 1
-                    property int curIdx: window.activeMode === "eth" ? 0 : (window.activeMode === "wifi" ? 1 : 2)
-
-                    onCurIdxChanged: {
-                        if (curIdx > prevIdx) { rightAnim.duration = 200; leftAnim.duration = 350; }
-                        else if (curIdx < prevIdx) { leftAnim.duration = 200; rightAnim.duration = 350; }
-                        prevIdx = curIdx;
-                    }
-
-                    property Item activeItem: {
-                        if (window.activeMode === "eth" && window.ethPresent) return ethTabRect;
-                        if (window.activeMode === "wifi" && window.wifiPresent) return wifiTabRect;
-                        if (window.activeMode === "bt" && window.btPresent) return btTabRect;
-                        return null;
-                    }
-
-                    property real targetLeft: activeItem ? activeItem.x : 0
-                    property real targetRight: activeItem ? (activeItem.x + activeItem.width) : 0
-
-                    property real actualLeft: targetLeft
-                    property real actualRight: targetRight
-
-                    Behavior on actualLeft { NumberAnimation { id: leftAnim; duration: 250; easing.type: Easing.OutExpo } }
-                    Behavior on actualRight { NumberAnimation { id: rightAnim; duration: 250; easing.type: Easing.OutExpo } }
-
-                    x: window.s(6) + actualLeft
-                    width: Math.max(0, actualRight - actualLeft)
-                    opacity: activeItem ? 1.0 : 0.0
-                    Behavior on opacity { NumberAnimation { duration: 300 } }
-
-                    gradient: Gradient {
-                        orientation: Gradient.Horizontal
-                        GradientStop { position: 0.0; color: Qt.lighter(window.activeColor, 1.15) }
-                        GradientStop { position: 1.0; color: window.activeColor }
-                    }
-                }
-
-                RowLayout {
-                    id: tabsLayout
-                    anchors.fill: parent
-                    anchors.margins: window.s(6)
-                    spacing: window.s(6)
-
-                    Rectangle {
-                        id: ethTabRect
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        visible: window.ethPresent
-                        radius: window.s(10)
-                        color: window.activeMode === "eth" ? "transparent" : (ethTabMa.containsMouse ? window.surface1 : "transparent")
-                        Behavior on color { ColorAnimation { duration: 200 } }
-
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: window.s(8)
-                            Text { font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18); color: window.activeMode === "eth" ? window.crust : window.text; text: "󰈀"; Behavior on color { ColorAnimation{duration:200} } }
-                            Text { font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13); color: window.activeMode === "eth" ? window.crust : window.text; text: "Ethernet"; Behavior on color { ColorAnimation{duration:200} } }
-                        }
-                        MouseArea {
-                            id: ethTabMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (window.pendingWifiId !== "") { window.pendingWifiId = ""; window.pendingWifiSsid = ""; }
-                                if (window.activeMode !== "eth") {
-                                    window.powerAnimAllowed = false;
-                                    powerAnimBlocker.restart();
-                                    window.playSfx("switch.wav");
-                                    window.activeMode = "eth";
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle { visible: window.ethPresent && (window.wifiPresent || window.btPresent); width: 1; Layout.fillHeight: true; Layout.margins: window.s(5); color: "#33ffffff" }
-
-                    Rectangle {
-                        id: wifiTabRect
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        visible: window.wifiPresent
-                        radius: window.s(10)
-                        
-                        color: window.activeMode === "wifi" ? "transparent" : (wifiTabMa.containsMouse ? window.surface1 : "transparent")
-                        Behavior on color { ColorAnimation { duration: 200 } }
-
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: window.s(8)
-                            Text { font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18); color: window.activeMode === "wifi" ? window.crust : window.text; text: "󰤨"; Behavior on color { ColorAnimation{duration:200} } }
-                            Text { font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13); color: window.activeMode === "wifi" ? window.crust : window.text; text: "Wi-Fi"; Behavior on color { ColorAnimation{duration:200} } }
-                        }
-                        MouseArea {
-                            id: wifiTabMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (window.pendingWifiId !== "") { window.pendingWifiId = ""; window.pendingWifiSsid = ""; }
-                                if (window.activeMode !== "wifi") {
-                                    window.powerAnimAllowed = false;
-                                    powerAnimBlocker.restart();
-                                    window.playSfx("switch.wav");
-                                    window.activeMode = "wifi";
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle { visible: window.wifiPresent && window.btPresent; width: 1; Layout.fillHeight: true; Layout.margins: window.s(5); color: "#33ffffff" }
-
-                    Rectangle {
-                        id: btTabRect
-                        Layout.fillWidth: true
-                        Layout.fillHeight: true
-                        visible: window.btPresent
-                        radius: window.s(10)
-                        color: window.activeMode === "bt" ? "transparent" : (btTabMa.containsMouse ? window.surface1 : "transparent")
-                        Behavior on color { ColorAnimation { duration: 200 } }
-
-                        RowLayout {
-                            anchors.centerIn: parent
-                            spacing: window.s(8)
-                            Text { font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18); color: window.activeMode === "bt" ? window.crust : window.text; text: "󰂯"; Behavior on color { ColorAnimation{duration:200} } }
-                            Text { font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13); color: window.activeMode === "bt" ? window.crust : window.text; text: "Bluetooth"; Behavior on color { ColorAnimation{duration:200} } }
-                        }
-                        MouseArea {
-                            id: btTabMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: {
-                                if (window.pendingWifiId !== "") { window.pendingWifiId = ""; window.pendingWifiSsid = ""; }
-                                if (window.activeMode !== "bt") {
-                                    window.powerAnimAllowed = false;
-                                    powerAnimBlocker.restart();
-                                    window.playSfx("switch.wav");
-                                    window.activeMode = "bt";
-                                }
-                            }
-                        }
-                    }
-                }
+                theme: window
+                scaleFunc: window.s
+                accentColor: window.activeColor
+                inactiveColor: window.text
+                hoverColor: window.text
+                tabs: window.tabsModel
+                activeTab: window.activeMode
+                onTabSelected: (tabId) => window.selectTab(tabId)
             }
 
             Item {

@@ -133,6 +133,8 @@ Item {
     property bool notifPillEnabled: true
     property bool systemTrayEnabled: true
     property bool batteryPillShowTime: false
+    property bool mullvadEnabled: false
+    property bool tailscaleEnabled: false
 
     property var keybindsData: []
     signal keybindsLoaded()
@@ -172,7 +174,9 @@ Item {
             "batteryHistoryEnabled": config.batteryHistoryEnabled,
             "notifPillEnabled": config.notifPillEnabled,
             "systemTrayEnabled": config.systemTrayEnabled,
-            "batteryPillShowTime": config.batteryPillShowTime
+            "batteryPillShowTime": config.batteryPillShowTime,
+            "mullvadEnabled": config.mullvadEnabled,
+            "tailscaleEnabled": config.tailscaleEnabled
         };
 
         config.updateJsonBulk(configObj);
@@ -462,6 +466,8 @@ Item {
                         if (config.rawSettings.notifPillEnabled !== undefined) config.notifPillEnabled = config.rawSettings.notifPillEnabled;
                         if (config.rawSettings.systemTrayEnabled !== undefined) config.systemTrayEnabled = config.rawSettings.systemTrayEnabled;
                         if (config.rawSettings.batteryPillShowTime !== undefined) config.batteryPillShowTime = config.rawSettings.batteryPillShowTime;
+                        if (config.rawSettings.mullvadEnabled !== undefined) config.mullvadEnabled = config.rawSettings.mullvadEnabled;
+                        if (config.rawSettings.tailscaleEnabled !== undefined) config.tailscaleEnabled = config.rawSettings.tailscaleEnabled;
 
                         // Map Keybinds
                         if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {

@@ -607,77 +607,22 @@ Item {
                 // ==========================================
                 // TABS
                 // ==========================================
-                Rectangle {
+                HorizontalTabBar {
                     Layout.fillWidth: true
                     Layout.preferredHeight: window.s(54)
-                    radius: window.s(14)
-                    color: "#0dffffff" 
-                    border.color: "#1affffff"
-                    border.width: 1
                     opacity: introHeader
                     transform: Translate { y: window.s(20) * (1.0 - introHeader) }
 
-                    Rectangle {
-                        width: (parent.width - window.s(2)) / 3 
-                        height: parent.height - window.s(2)
-                        y: window.s(1)
-                        radius: window.s(10)
-                        x: {
-                            if (window.activeTab === "outputs") return window.s(1);
-                            if (window.activeTab === "inputs") return width + window.s(1);
-                            return (width * 2) + window.s(1);
-                        }
-                        Behavior on x { NumberAnimation { duration: 500; easing.type: Easing.OutBack; easing.overshoot: 1.1 } }
-                        
-                        gradient: Gradient {
-                            orientation: Gradient.Horizontal
-                            GradientStop { position: 0.0; color: window.tabColor; Behavior on color { ColorAnimation { duration: 400 } } }
-                            GradientStop { position: 1.0; color: Qt.lighter(window.tabColor, 1.15); Behavior on color { ColorAnimation { duration: 400 } } }
-                        }
-                    }
-
-                    RowLayout {
-                        anchors.fill: parent
-                        spacing: 0
-                        
-                        Repeater {
-                            model: ListModel {
-                                ListElement { tabId: "outputs"; icon: "󰓃"; label: "Outputs" } 
-                                ListElement { tabId: "inputs"; icon: "󰍬"; label: "Inputs" }   
-                                ListElement { tabId: "apps"; icon: "󰎆"; label: "Streams" } 
-                            }
-                            
-                            delegate: Item {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                
-                                RowLayout {
-                                    anchors.centerIn: parent
-                                    spacing: window.s(8)
-                                    Text {
-                                        font.family: "Iosevka Nerd Font"; font.pixelSize: window.s(18)
-                                        color: window.activeTab === tabId ? window.crust : (tabMa.containsMouse ? window.text : window.subtext0)
-                                        text: icon
-                                        Behavior on color { ColorAnimation { duration: 200 } }
-                                    }
-                                    Text {
-                                        font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: window.s(13)
-                                        color: window.activeTab === tabId ? window.crust : (tabMa.containsMouse ? window.text : window.subtext0)
-                                        text: label
-                                        Behavior on color { ColorAnimation { duration: 200 } }
-                                    }
-                                }
-                                
-                                MouseArea {
-                                    id: tabMa
-                                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        window.activeTab = tabId;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    theme: window
+                    scaleFunc: window.s
+                    accentColor: window.tabColor
+                    tabs: [
+                        { tabId: "outputs", icon: "󰓃", label: "Outputs" },
+                        { tabId: "inputs", icon: "󰍬", label: "Inputs" },
+                        { tabId: "apps", icon: "󰎆", label: "Streams" }
+                    ]
+                    activeTab: window.activeTab
+                    onTabSelected: (tabId) => window.activeTab = tabId
                 }
 
                 // ==========================================

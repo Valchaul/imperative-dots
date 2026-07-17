@@ -37,6 +37,7 @@ function getLayout(name, mx, my, mw, mh, userScale) {
         "volume":    { w: s(450, scale), h: s(700, scale), rx: mw - s(455, scale), ry: s(60, scale), comp: "volume/VolumePopup.qml" },
         "stats":     { w: s(700, scale), h: s(460, scale), rx: mw - s(705, scale), ry: s(60, scale), comp: "systemmonitor/StatsPopupLight.qml" },
         "notifications": { w: s(460, scale), h: s(720, scale), rx: mw - s(465, scale), ry: s(60, scale), comp: "notifications/NotificationCenterPopup.qml" },
+        "vpn":       { w: s(420, scale), h: s(380, scale), rx: mw - s(425, scale), ry: s(60, scale), comp: "vpn/VpnPopup.qml" },
 
         // --- Central Standard Tools ---
         "applauncher": { w: s(800, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "applauncher/appLauncher.qml" },

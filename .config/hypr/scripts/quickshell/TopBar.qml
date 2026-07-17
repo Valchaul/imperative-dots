@@ -263,6 +263,16 @@ Variants {
             }
             
             property string kbLayout: "us"
+
+            property bool mvAvailable: false
+            property bool mvConnected: false
+            property string vpnState: "disconnected"
+
+            property bool tsAvailable: false
+            property bool tsConnected: false
+
+            readonly property bool vpnAvailable: (Config.mullvadEnabled && mvAvailable) || (Config.tailscaleEnabled && tsAvailable)
+            readonly property bool vpnConnected: (Config.mullvadEnabled && mvConnected) || (Config.tailscaleEnabled && tsConnected)
             
             ListModel { 
                 id: workspacesModel 
@@ -523,6 +533,89 @@ Variants {
                 }
             }
             Process { id: btWaiter; command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/bt_wait.sh"]; onExited: { btPoller.running = false; btPoller.running = true; } }
+
+            Process {
+                id: vpnAvailCheck
+                running: Config.mullvadEnabled
+                command: ["bash", "-c", "command -v mullvad >/dev/null 2>&1 && echo 1 || echo 0"]
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        barWindow.mvAvailable = (this.text.trim() === "1");
+                    }
+                }
+            }
+
+            Process {
+                id: vpnFetch
+                command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/vpn_fetch.sh"]
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        let txt = this.text.trim();
+                        if (txt !== "") {
+                            try {
+                                let data = JSON.parse(txt);
+                                barWindow.mvConnected = !!data.connected;
+                                barWindow.vpnState = data.state || "disconnected";
+                            } catch(e) {}
+                        }
+                    }
+                }
+            }
+
+            Timer { id: vpnFetchDebounce; interval: 150; onTriggered: { vpnFetch.running = false; vpnFetch.running = true; } }
+
+            // `mullvad status listen` streams the current state immediately on start and then
+            // again on every real change - unlike the wait+exit watchers above it never exits on
+            // its own, so it's parsed as a live SplitParser stream (like pactl subscribe) rather
+            // than restarted per-event.
+            Process {
+                id: vpnListener
+                running: Config.mullvadEnabled && barWindow.mvAvailable
+                command: ["mullvad", "status", "listen"]
+                stdout: SplitParser {
+                    onRead: (line) => vpnFetchDebounce.restart()
+                }
+                onExited: vpnListenerRestart.start()
+            }
+            Timer { id: vpnListenerRestart; interval: 2000; onTriggered: { vpnListener.running = false; vpnListener.running = true; } }
+
+            Process {
+                id: tsAvailCheck
+                running: Config.tailscaleEnabled
+                command: ["bash", "-c", "command -v tailscale >/dev/null 2>&1 && echo 1 || echo 0"]
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        barWindow.tsAvailable = (this.text.trim() === "1");
+                    }
+                }
+            }
+
+            Process {
+                id: tsFetch
+                command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/tailscale_fetch.sh"]
+                stdout: StdioCollector {
+                    onStreamFinished: {
+                        let txt = this.text.trim();
+                        if (txt !== "") {
+                            try {
+                                let data = JSON.parse(txt);
+                                barWindow.tsConnected = !!data.connected;
+                            } catch(e) {}
+                        }
+                    }
+                }
+            }
+
+            // Tailscale has no lightweight equivalent to `mullvad status listen`, so its
+            // state is polled on an interval instead of streamed.
+            Timer {
+                id: tsPoller
+                running: Config.tailscaleEnabled && barWindow.tsAvailable
+                interval: 10000
+                repeat: true
+                triggeredOnStart: true
+                onTriggered: { tsFetch.running = false; tsFetch.running = true; }
+            }
 
             Process {
                 id: batteryPoller; running: true
@@ -1277,6 +1370,22 @@ Variants {
                                     color: barWindow.isBtOn ? mocha.base : mocha.text;
                                     width: Math.min(implicitWidth, barWindow.s(100)); elide: Text.ElideRight
                                 }
+                            }
+
+                            StatusPill {
+                                id: vpnPill
+                                theme: mocha
+                                scaleFunc: barWindow.s
+                                height: sysLayout.pillHeight
+                                collapsed: !barWindow.vpnAvailable
+                                active: barWindow.vpnConnected
+                                activeColorStart: mocha.green
+                                introTrigger: rightContent.showLayout
+                                staggerDelay: 140
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle vpn"])
+
+                                Text { anchors.verticalCenter: parent.verticalCenter; text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: barWindow.s(16); color: barWindow.vpnConnected ? mocha.base : mocha.subtext0 }
+                                Text { anchors.verticalCenter: parent.verticalCenter; text: "VPN"; font.family: "JetBrains Mono"; font.pixelSize: barWindow.s(13); font.weight: Font.Black; color: barWindow.vpnConnected ? mocha.base : mocha.text }
                             }
 
                             StatusPill {
