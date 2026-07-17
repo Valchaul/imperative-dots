@@ -44,10 +44,15 @@ Item {
     property bool isSearching: searchInput.text.trim() !== ""
     property bool isSearchingNetwork: false
     property bool isSearchMode: window.isSearching
+    onIsSearchModeChanged: if (isSearchMode) window.watchHistoryFocused = false
     property string selectedImdbId: ""
     property string selectedTitle: ""
     property string selectedPoster: ""
+    property string selectedYear: ""
+    property real selectedRating: 0
     property string selectedDescription: ""
+    property int watchHistoryIndex: -1
+    property bool watchHistoryFocused: false
     property var seriesDataMap: ({})
     property int currentSeason: 1
     property bool isLoadingSeries: false
@@ -142,6 +147,10 @@ Item {
         }
     }
 
+    function isValidPosterUrl(poster) {
+        return !!poster && poster.indexOf("http") === 0
+    }
+
     function processTrendingCache(parsed, typeStr, targetModel) {
         let now = Date.now()
         let isMovie = typeStr === "movie"
@@ -151,8 +160,11 @@ Item {
         if (items && items.length > 0) {
             targetModel.clear()
             if (isMovie) window.rawTrendingMovies = items; else window.rawTrendingTv = items
-            for (let i = 0; i < items.length; i++) targetModel.append(items[i])
-            
+            for (let i = 0; i < items.length; i++) {
+                targetModel.append(items[i])
+                if (!isValidPosterUrl(items[i].poster)) fetchAndUpdatePoster(items[i].imdbId, isMovie ? "movie" : "tv", targetModel)
+            }
+
             if (isMovie) { window.trendingMoviesLoaded = true; window.isFetchingMovies = false; window.trendingMoviesLastFetch = lastFetch } 
             else { window.trendingTvLoaded = true; window.isFetchingTv = false; window.trendingTvLastFetch = lastFetch }
             
@@ -275,7 +287,7 @@ Item {
         let arr = []
         for (let i = 0; i < watchHistoryModel.count; i++) {
             let item = watchHistoryModel.get(i)
-            arr.push({ imdbId: item.imdbId, title: item.title, poster: item.poster, type: item.type })
+            arr.push({ imdbId: item.imdbId, title: item.title, poster: item.poster, type: item.type, year: item.year || "N/A", rating: item.rating || 0 })
         }
         saveJsonToCache("qs_movie_watch_history.json", arr)
     }
@@ -403,7 +415,7 @@ Item {
                 if (epList.currentIndex > 0) epList.currentIndex--; event.accepted = true
             } else if (event.key === Qt.Key_Return) {
                 let ep = episodeModel.get(epList.currentIndex)
-                if (ep) startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, ep.epNum)
+                if (ep) startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, ep.epNum, window.selectedYear, window.selectedRating)
                 event.accepted = true
             }
         } else if (event.key === Qt.Key_Escape) {
@@ -415,6 +427,11 @@ Item {
 
     property bool isKeyboardNav: false
     Timer { id: keyboardNavTimer; interval: 500; repeat: false; onTriggered: window.isKeyboardNav = false }
+    // Unlike isKeyboardNav (a short-lived pulse flag driving the active-card
+    // scale animation), this doesn't expire — it tracks whether a card is
+    // meaningfully selected at all, so Enter still activates it even if the
+    // user pauses after navigating there.
+    property bool hasGridSelection: false
 
     ListModel { id: searchHistoryModel }
     ListModel { id: watchHistoryModel }
@@ -488,10 +505,10 @@ Item {
     property var sourceCheckOrder: []
     property int sourceCheckStep: 0
 
-    function startSourceCheck(type, imdbId, title, poster, season, ep) {
+    function startSourceCheck(type, imdbId, title, poster, season, ep, year, rating) {
         pendingMedia = { type: type, imdbId: imdbId, title: title, poster: poster, season: season, ep: ep }
         for (let i = 0; i < sourceModel.count; i++) sourceModel.setProperty(i, "status", "pending")
-        addToWatchHistory({ imdbId: imdbId, title: title, poster: poster, type: type })
+        addToWatchHistory({ imdbId: imdbId, title: title, poster: poster, type: type, year: year || "N/A", rating: rating || 0 })
         window.sourceCheckOrder = buildSourceOrder()
         window.sourceCheckStep = 0
         window.currentCheckIndex = window.sourceCheckOrder[0]
@@ -653,7 +670,7 @@ Item {
                     let entry = {
                         imdbId: item.id,
                         title: item.name || "Unknown",
-                        poster: item.poster || item.posterShape || item.background || item.logo || "",
+                        poster: item.poster || item.background || item.logo || "",
                         type: isMovie ? "movie" : "tv",
                         year: item.releaseInfo || "N/A",
                         rating: item.imdbRating || 0,
@@ -661,6 +678,7 @@ Item {
                     }
                     rawItems.push(entry)
                     targetModel.append(entry)
+                    if (!isValidPosterUrl(entry.poster)) fetchAndUpdatePoster(entry.imdbId, entry.type, targetModel)
                 }
                 if (isMovie) { window.rawTrendingMovies = rawItems; window.trendingMoviesLastFetch = Date.now(); window.trendingMoviesLoaded = true }
                 else { window.rawTrendingTv = rawItems; window.trendingTvLastFetch = Date.now(); window.trendingTvLoaded = true }
@@ -731,7 +749,7 @@ Item {
                 if (!res || !res.metas) return
                 window.currentFetchResults = res.metas
                 applyFiltersAndPopulate()
-                enrichSearchPosters(res.metas, typeStr)
+                enrichSearchResults(res.metas, typeStr)
             },
             onError: function() {
                 if (window.mediaType !== expectedType) return
@@ -740,43 +758,58 @@ Item {
         })
     }
 
-    function enrichSearchPosters(metas, typeStr) {
+    // Cinemeta's search endpoint never returns a rating, unlike the trending
+    // endpoint Popular Movies/TV use, so every search result needs one extra
+    // per-item lookup to pick up its imdbRating (also used to backfill poster
+    // for the subset of results missing one, same as before).
+    function enrichSearchResults(metas, typeStr) {
         for (let i = 0; i < metas.length; i++) {
             let item = metas[i]
-            if (item.poster && item.poster !== "") continue
+            let needsPoster = !item.poster || item.poster === ""
             let capturedImdbId = item.id
-            ;(function(cImdbId) {
+            ;(function(cImdbId, needsPosterFallback) {
                 fetchJson("https://v3-cinemeta.strem.io/meta/" + typeStr + "/" + cImdbId + ".json", {
                     onSuccess: function(res2) {
+                        let posterSet = false
                         if (res2 && res2.meta) {
-                            let poster = res2.meta.poster || res2.meta.background || ""
-                            if (poster !== "") {
-                                for (let j = 0; j < searchResults.count; j++) {
-                                    if (searchResults.get(j).imdbId === cImdbId) {
-                                        searchResults.setProperty(j, "poster", poster)
-                                        break
-                                    }
+                            let rating = res2.meta.imdbRating || 0
+                            for (let j = 0; j < searchResults.count; j++) {
+                                if (searchResults.get(j).imdbId === cImdbId) {
+                                    searchResults.setProperty(j, "rating", rating)
+                                    break
                                 }
-                                return
+                            }
+                            if (needsPosterFallback) {
+                                let poster = res2.meta.poster || res2.meta.background || ""
+                                if (poster !== "") {
+                                    for (let j = 0; j < searchResults.count; j++) {
+                                        if (searchResults.get(j).imdbId === cImdbId) {
+                                            searchResults.setProperty(j, "poster", poster)
+                                            break
+                                        }
+                                    }
+                                    posterSet = true
+                                }
                             }
                         }
-                        fetchPosterFallback(cImdbId, typeStr)
+                        if (needsPosterFallback && !posterSet) fetchPosterFallback(cImdbId, typeStr)
                     },
-                    onError: function() { fetchPosterFallback(cImdbId, typeStr) }
+                    onError: function() { if (needsPosterFallback) fetchPosterFallback(cImdbId, typeStr) }
                 })
-            })(capturedImdbId)
+            })(capturedImdbId, needsPoster)
         }
     }
 
-    function fetchPosterFallback(imdbId, typeStr) {
+    function fetchPosterFallback(imdbId, typeStr, targetModel) {
+        targetModel = targetModel || searchResults
         let rpdbUrl = "https://api.ratingposterdb.com/imdb/poster-default/" + imdbId + ".jpg"
         fetchJson(rpdbUrl, {
             method: "HEAD",
             timeout: 5000,
             onSuccess: function() {
-                for (let j = 0; j < searchResults.count; j++) {
-                    if (searchResults.get(j).imdbId === imdbId) {
-                        searchResults.setProperty(j, "poster", rpdbUrl)
+                for (let j = 0; j < targetModel.count; j++) {
+                    if (targetModel.get(j).imdbId === imdbId) {
+                        targetModel.setProperty(j, "poster", rpdbUrl)
                         break
                     }
                 }
@@ -799,18 +832,20 @@ Item {
                         }
                     }
                 } else {
-                    fetchPosterFallback(imdbId, metaType)
+                    fetchPosterFallback(imdbId, metaType, targetModel)
                 }
             },
-            onError: function() { fetchPosterFallback(imdbId, metaType) }
+            onError: function() { fetchPosterFallback(imdbId, metaType, targetModel) }
         })
     }
 
-    function fetchSeriesData(imdbId, targetSeason, title, poster, isReload) {
+    function fetchSeriesData(imdbId, targetSeason, title, poster, isReload, year, rating) {
         if (!isReload) {
             window.selectedImdbId = imdbId
             window.selectedTitle = title
             window.selectedPoster = poster
+            window.selectedYear = year || ""
+            window.selectedRating = rating || 0
             window.selectedDescription = ""
             window.currentView = "series"
             window.forceActiveFocus()
@@ -830,6 +865,10 @@ Item {
                 if (res && res.meta) {
                     if (!isReload || !window.selectedDescription) window.selectedDescription = res.meta.description || res.meta.synopsis || ""
                     if ((!window.selectedPoster || window.selectedPoster === "") && res.meta.poster) window.selectedPoster = res.meta.poster
+                    // This endpoint always has rating/year, unlike the search catalog the
+                    // click may have originated from, so it wins over whatever was passed in.
+                    if (res.meta.imdbRating) window.selectedRating = Number(res.meta.imdbRating) || 0
+                    if (res.meta.releaseInfo) window.selectedYear = res.meta.releaseInfo
 
                     if (res.meta.videos) {
                         let seasonsMap = {}
@@ -860,8 +899,8 @@ Item {
         })
     }
 
-    function loadSeriesDetails(imdbId, title, poster) {
-        fetchSeriesData(imdbId, 1, title, poster, false)
+    function loadSeriesDetails(imdbId, title, poster, year, rating) {
+        fetchSeriesData(imdbId, 1, title, poster, false, year, rating)
     }
 
     function updateEpisodes(seasonNum) {
@@ -923,77 +962,165 @@ Item {
         }
     }
 
-    component PosterDelegate: HoverCard {
-        id: posterCard
-        width: window.s(120); height: width * 1.5
-        theme: window
-        scaleFunc: window.s
+    // Shared card used by Popular Movies, Popular TV Shows, Watch History, and
+    // Search results — one visual/behavioral definition, sized by the caller
+    // (fixed size for the Watch History ListView, cell-bound for GridViews).
+    component MediaCard: Rectangle {
+        id: card
         radius: window.s(10)
-        color: window.crust
-        border.width: 0
-        clip: true
-        hoverScale: 1.0
-        pressScale: 1.0
-        onClicked: {
-            if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0)
-            else loadSeriesDetails(model.imdbId, model.title, model.poster)
-        }
+        color: "transparent"
 
-        Image {
-            id: posterImg
+        property string imdbId: ""
+        property string cardTitle: ""
+        property string poster: ""
+        property string mediaType: "movie" // "movie" | "tv"
+        property string year: ""
+        property real rating: 0
+        property bool active: false
+        property bool hovered: mouseArea.containsMouse
+
+        signal activated()
+        signal hoverEntered()
+
+        ColumnLayout {
             anchors.fill: parent
-            source: model.poster !== "" ? model.poster : ""
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            smooth: true
-            cache: true
-            sourceSize.width: window.s(240)
-            sourceSize.height: window.s(360)
-            visible: status === Image.Ready
-        }
-        Rectangle {
-            anchors.fill: parent
-            color: window.surface0
-            visible: model.poster === "" || posterImg.status === Image.Error || posterImg.status === Image.Null
-            radius: window.s(10)
-            Column {
-                anchors.centerIn: parent
-                width: parent.width - window.s(10)
+            spacing: window.s(3)
+
+            Rectangle {
+                id: posterFrame
+                Layout.fillWidth: true; Layout.preferredHeight: width * 1.5
+                radius: window.s(10); color: window.crust; clip: true
+                scale: card.active && window.isKeyboardNav ? 1.03 : 1.0
+                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+
+                Rectangle {
+                    id: posterMask
+                    anchors.fill: parent
+                    radius: window.s(10)
+                    color: "black"
+                    visible: false
+                    layer.enabled: true
+                }
+                Image {
+                    id: posterImg
+                    anchors.fill: parent
+                    source: card.poster !== "" ? card.poster : ""
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true; smooth: true; cache: true
+                    sourceSize.width: posterFrame.width * 2
+                    sourceSize.height: posterFrame.height * 2
+                    visible: false
+                }
+                MultiEffect {
+                    source: posterImg
+                    anchors.fill: posterImg
+                    maskEnabled: true
+                    maskSource: posterMask
+                    visible: posterImg.status === Image.Ready
+                }
+                Rectangle {
+                    anchors.fill: parent; color: window.surface0
+                    visible: card.poster === "" || posterImg.status === Image.Error || posterImg.status === Image.Loading
+                    radius: window.s(10)
+                    property bool isLoading: card.poster !== "" && posterImg.status === Image.Loading
+                    Rectangle {
+                        anchors.fill: parent; radius: window.s(10); color: "transparent"
+                        visible: parent.isLoading
+                        Rectangle {
+                            width: parent.width * 0.4; height: parent.height
+                            color: Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.4)
+                            property real shimX: -parent.parent.width
+                            x: shimX
+                            NumberAnimation on shimX {
+                                from: -parent.parent.width
+                                to: parent.parent.width * 1.5
+                                duration: 1200; loops: Animation.Infinite
+                                running: parent.parent.parent.isLoading
+                                easing.type: Easing.InOutSine
+                            }
+                        }
+                    }
+                    Column {
+                        anchors.centerIn: parent
+                        width: parent.width - window.s(10)
+                        spacing: window.s(6)
+                        visible: !parent.isLoading
+                        Text {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            text: card.mediaType === "tv" ? "📺" : "🎬"
+                            font.pixelSize: window.s(22)
+                        }
+                        Text {
+                            width: parent.width
+                            text: card.cardTitle || "Unknown"
+                            color: window.subtext0
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: window.s(11)
+                            wrapMode: Text.WordWrap
+                            horizontalAlignment: Text.AlignHCenter
+                            maximumLineCount: 4
+                            elide: Text.ElideRight
+                        }
+                    }
+                }
+                Rectangle {
+                    anchors.fill: parent; radius: window.s(10)
+                    color: card.mediaType === "tv" ? window.blue : window.mauve
+                    opacity: card.active ? 0.2 : 0
+                    Behavior on opacity { NumberAnimation { duration: 200 } }
+                }
+            }
+            Text {
+                Layout.fillWidth: true; Layout.preferredHeight: window.s(30); Layout.topMargin: window.s(5)
+                text: card.cardTitle; font.family: "JetBrains Mono"; font.pixelSize: window.s(12); font.weight: Font.Bold
+                color: card.active ? window.text : window.subtext0
+                wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; lineHeight: 1.1; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignBottom
+                Behavior on color { ColorAnimation { duration: 200 } }
+            }
+            RowLayout {
+                Layout.alignment: Qt.AlignHCenter
+                Layout.preferredHeight: window.s(16)
                 spacing: window.s(6)
                 Text {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    text: model.type === "tv" ? "📺" : "🎬"
-                    font.pixelSize: window.s(22)
+                    text: card.year !== "" && card.year !== "N/A" ? card.year : ""
+                    font.family: "JetBrains Mono"; font.pixelSize: window.s(11); color: window.surface2
+                    visible: text !== ""
                 }
-                Text {
-                    width: parent.width
-                    text: model.title || "Unknown"
-                    color: window.subtext0
-                    font.family: "JetBrains Mono"
-                    font.pixelSize: window.s(11)
-                    wrapMode: Text.WordWrap
-                    horizontalAlignment: Text.AlignHCenter
-                    maximumLineCount: 4
-                    elide: Text.ElideRight
+                Rectangle {
+                    visible: Number(card.rating || 0) > 0
+                    radius: window.s(8)
+                    color: Qt.rgba(window.mauve.r, window.mauve.g, window.mauve.b, 0.15)
+                    Layout.preferredWidth: ratingText.width + window.s(12)
+                    Layout.preferredHeight: window.s(16)
+                    Text {
+                        id: ratingText
+                        anchors.centerIn: parent
+                        text: "★ " + Number(card.rating || 0).toFixed(1)
+                        font.family: "JetBrains Mono"; font.pixelSize: window.s(10); font.weight: Font.Bold
+                        color: window.mauve
+                    }
                 }
             }
         }
-        Rectangle {
-            anchors.fill: parent; radius: window.s(10)
-            color: window.mediaType === "tv" ? window.blue : window.mauve
-            opacity: posterCard.containsMouse ? 0.3 : 0
-            Behavior on opacity { NumberAnimation { duration: 200 } }
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent; hoverEnabled: true
+            onEntered: card.hoverEntered()
+            onClicked: card.activated()
         }
     }
 
     Component {
         id: dashboardHeaderComp
         Item {
+            id: headerRoot
             width: GridView.view.width
+            readonly property real cardWidth: Math.floor(width / 8)
+            readonly property real cardHeight: cardWidth * 1.5 + window.s(62)
             property bool hasSearch: searchHistoryModel.count > 0
             property bool hasWatch: watchHistoryModel.count > 0
             readonly property real searchSectionH: hasSearch ? (window.s(16) + window.s(12) + window.s(32) + window.s(28)) : 0
-            readonly property real watchSectionH: hasWatch ? (window.s(16) + window.s(12) + window.s(200) + window.s(28)) : 0
+            readonly property real watchSectionH: hasWatch ? (window.s(16) + window.s(12) + cardHeight + window.s(28)) : 0
             readonly property real popularLabelH: window.s(16) + window.s(16)
             height: searchSectionH + watchSectionH + popularLabelH
             Column {
@@ -1063,10 +1190,30 @@ Item {
                             font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(16)
                         }
                         ListView {
-                            width: parent.width; height: window.s(200)
+                            id: watchHistoryList
+                            width: parent.width; height: headerRoot.cardHeight
                             orientation: ListView.Horizontal; spacing: window.s(15)
                             model: watchHistoryModel; clip: true
-                            delegate: PosterDelegate {}
+                            currentIndex: window.watchHistoryIndex
+                            highlightFollowsCurrentItem: true
+                            highlightMoveDuration: 200
+                            Connections {
+                                target: window
+                                function onWatchHistoryIndexChanged() {
+                                    if (window.watchHistoryIndex >= 0) watchHistoryList.positionViewAtIndex(window.watchHistoryIndex, ListView.Contain)
+                                }
+                            }
+                            delegate: MediaCard {
+                                width: headerRoot.cardWidth; height: headerRoot.cardHeight
+                                imdbId: model.imdbId; cardTitle: model.title; poster: model.poster
+                                mediaType: model.type; year: model.year || ""; rating: model.rating || 0
+                                active: index === window.watchHistoryIndex && window.watchHistoryFocused
+                                onHoverEntered: { window.isKeyboardNav = false; window.hasGridSelection = true; window.watchHistoryFocused = true; window.watchHistoryIndex = index }
+                                onActivated: {
+                                    if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0, model.year, model.rating)
+                                    else loadSeriesDetails(model.imdbId, model.title, model.poster, model.year, model.rating)
+                                }
+                            }
                             ScrollBar.horizontal: ScrollBar {
                                 active: true
                                 contentItem: Rectangle { radius: window.s(2); color: window.surface2 }
@@ -1158,6 +1305,7 @@ Item {
                         }
 
                         onTextChanged: {
+                            window.hasGridSelection = false
                             if (text.trim() === "") { searchResults.clear(); window.isSearchingNetwork = false; searchDebounceTimer.stop() }
                             else searchDebounceTimer.restart()
                         }
@@ -1169,29 +1317,48 @@ Item {
                         Component.onCompleted: {
                             inputItem.Keys.pressed.connect(function(event) {
                                 if (event.key === Qt.Key_Right) {
-                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
-                                    let g = getActiveGrid()
-                                    if (g && g.count > 0 && g.currentIndex < g.count - 1) g.currentIndex++
+                                    window.isKeyboardNav = true; window.hasGridSelection = true; keyboardNavTimer.restart()
+                                    if (window.watchHistoryFocused) {
+                                        if (window.watchHistoryIndex < watchHistoryModel.count - 1) window.watchHistoryIndex++
+                                    } else {
+                                        let g = getActiveGrid()
+                                        if (g && g.count > 0 && g.currentIndex < g.count - 1) g.currentIndex++
+                                    }
                                     event.accepted = true
                                 } else if (event.key === Qt.Key_Left) {
-                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
-                                    let g = getActiveGrid()
-                                    if (g && g.count > 0 && g.currentIndex > 0) g.currentIndex--
+                                    window.isKeyboardNav = true; window.hasGridSelection = true; keyboardNavTimer.restart()
+                                    if (window.watchHistoryFocused) {
+                                        if (window.watchHistoryIndex > 0) window.watchHistoryIndex--
+                                    } else {
+                                        let g = getActiveGrid()
+                                        if (g && g.count > 0 && g.currentIndex > 0) g.currentIndex--
+                                    }
                                     event.accepted = true
                                 } else if (event.key === Qt.Key_Down) {
-                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
-                                    let g = getActiveGrid()
-                                    if (g && g.count > 0) {
-                                        let columns = Math.max(1, Math.floor(g.width / g.cellWidth))
-                                        if (g.currentIndex + columns < g.count) g.currentIndex += columns
+                                    window.isKeyboardNav = true; window.hasGridSelection = true; keyboardNavTimer.restart()
+                                    if (window.watchHistoryFocused) {
+                                        window.watchHistoryFocused = false
+                                        let g = getActiveGrid()
+                                        if (g && g.count > 0) g.currentIndex = Math.min(Math.max(window.watchHistoryIndex, 0), g.count - 1)
+                                    } else {
+                                        let g = getActiveGrid()
+                                        if (g && g.count > 0) {
+                                            let columns = Math.max(1, Math.floor(g.width / g.cellWidth))
+                                            if (g.currentIndex + columns < g.count) g.currentIndex += columns
+                                        }
                                     }
                                     event.accepted = true
                                 } else if (event.key === Qt.Key_Up) {
-                                    window.isKeyboardNav = true; keyboardNavTimer.restart()
-                                    let g = getActiveGrid()
-                                    if (g && g.count > 0) {
-                                        let columns = Math.max(1, Math.floor(g.width / g.cellWidth))
-                                        if (g.currentIndex - columns >= 0) g.currentIndex -= columns
+                                    window.isKeyboardNav = true; window.hasGridSelection = true; keyboardNavTimer.restart()
+                                    if (!window.watchHistoryFocused) {
+                                        let g = getActiveGrid()
+                                        let columns = g ? Math.max(1, Math.floor(g.width / g.cellWidth)) : 1
+                                        if (g && g.count > 0 && g.currentIndex - columns >= 0) {
+                                            g.currentIndex -= columns
+                                        } else if (!window.isSearchMode && watchHistoryModel.count > 0) {
+                                            window.watchHistoryFocused = true
+                                            window.watchHistoryIndex = Math.min(g ? g.currentIndex : 0, watchHistoryModel.count - 1)
+                                        }
                                     }
                                     event.accepted = true
                                 } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
@@ -1199,13 +1366,21 @@ Item {
                                 } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                                     if (text.trim() !== "" && searchResults.count === 0 && !window.isSearchingNetwork) {
                                         doSearch(text)
-                                    } else if (window.isKeyboardNav) {
-                                        let g = getActiveGrid()
-                                        if (g && g.count > 0 && g.currentIndex >= 0 && g.currentIndex < g.count) {
-                                            let item = g.model.get(g.currentIndex)
+                                    } else if (window.hasGridSelection) {
+                                        if (window.watchHistoryFocused && window.watchHistoryIndex >= 0 && window.watchHistoryIndex < watchHistoryModel.count) {
+                                            let item = watchHistoryModel.get(window.watchHistoryIndex)
                                             if (item) {
-                                                if (item.type === "movie") startSourceCheck("movie", item.imdbId, item.title, item.poster, 0, 0)
-                                                else loadSeriesDetails(item.imdbId, item.title, item.poster)
+                                                if (item.type === "movie") startSourceCheck("movie", item.imdbId, item.title, item.poster, 0, 0, item.year, item.rating)
+                                                else loadSeriesDetails(item.imdbId, item.title, item.poster, item.year, item.rating)
+                                            }
+                                        } else {
+                                            let g = getActiveGrid()
+                                            if (g && g.count > 0 && g.currentIndex >= 0 && g.currentIndex < g.count) {
+                                                let item = g.model.get(g.currentIndex)
+                                                if (item) {
+                                                    if (item.type === "movie") startSourceCheck("movie", item.imdbId, item.title, item.poster, 0, 0, item.year, item.rating)
+                                                    else loadSeriesDetails(item.imdbId, item.title, item.poster, item.year, item.rating)
+                                                }
                                             }
                                         }
                                     }
@@ -1278,70 +1453,17 @@ Item {
                     Component {
                         id: mediaGridDelegate
                         Item {
+                            id: cellRoot
                             width: GridView.view.cellWidth; height: GridView.view.cellHeight; z: 1
-                            Rectangle {
-                                anchors.fill: parent; anchors.margins: window.s(5); radius: window.s(10); color: "transparent"
-                                property bool isActive: index === parent.parent.GridView.view.currentIndex
-                                ColumnLayout {
-                                    anchors.fill: parent; anchors.margins: window.s(10); spacing: window.s(8)
-                                    Rectangle {
-                                        Layout.fillWidth: true; Layout.fillHeight: true; radius: window.s(8); color: window.crust; clip: true
-                                        scale: parent.parent.isActive && window.isKeyboardNav ? 1.03 : 1.0
-                                        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-                                        Image {
-                                            id: gridImage
-                                            anchors.fill: parent
-                                            source: model.poster !== "" ? model.poster : ""
-                                            fillMode: Image.PreserveAspectCrop
-                                            asynchronous: true; smooth: true; cache: true
-                                            visible: status === Image.Ready
-                                        }
-                                        Rectangle {
-                                            anchors.fill: parent; color: window.surface0
-                                            visible: model.poster === "" || gridImage.status === Image.Error || gridImage.status === Image.Loading
-                                            radius: window.s(8)
-                                            property bool isLoading: model.poster !== "" && gridImage.status === Image.Loading
-                                            Rectangle {
-                                                anchors.fill: parent; radius: window.s(8); color: "transparent"
-                                                visible: parent.isLoading
-                                                Rectangle {
-                                                    width: parent.width * 0.4; height: parent.height
-                                                    color: Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.4)
-                                                    property real shimX: -parent.parent.width
-                                                    x: shimX
-                                                    NumberAnimation on shimX {
-                                                        from: -parent.parent.width
-                                                        to: parent.parent.width * 1.5
-                                                        duration: 1200; loops: Animation.Infinite
-                                                        running: parent.parent.parent.isLoading
-                                                        easing.type: Easing.InOutSine
-                                                    }
-                                                }
-                                            }
-                                            Text { anchors.centerIn: parent; width: parent.width - window.s(10); text: model.title || "Unknown"; color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(12); wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; visible: !parent.isLoading }
-                                        }
-                                        Rectangle {
-                                            anchors.fill: parent; radius: window.s(8)
-                                            color: window.mediaType === "tv" ? window.blue : window.mauve
-                                            opacity: parent.parent.parent.isActive ? 0.2 : 0
-                                            Behavior on opacity { NumberAnimation { duration: 200 } }
-                                        }
-                                    }
-                                    Text {
-                                        Layout.fillWidth: true; text: model.title; font.family: "JetBrains Mono"; font.pixelSize: window.s(12); font.weight: Font.Bold
-                                        color: parent.parent.isActive ? window.text : window.subtext0
-                                        wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; lineHeight: 1.1; horizontalAlignment: Text.AlignHCenter
-                                        Behavior on color { ColorAnimation { duration: 200 } }
-                                    }
-                                    Text { Layout.fillWidth: true; text: model.year !== "N/A" ? model.year : ""; font.family: "JetBrains Mono"; font.pixelSize: window.s(11); color: window.surface2; horizontalAlignment: Text.AlignHCenter; visible: text !== "" }
-                                }
-                                MouseArea {
-                                    anchors.fill: parent; hoverEnabled: true
-                                    onEntered: { window.isKeyboardNav = false; parent.parent.GridView.view.currentIndex = index }
-                                    onClicked: {
-                                        if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0)
-                                        else loadSeriesDetails(model.imdbId, model.title, model.poster)
-                                    }
+                            MediaCard {
+                                anchors.fill: parent; anchors.margins: window.s(5)
+                                imdbId: model.imdbId; cardTitle: model.title; poster: model.poster
+                                mediaType: model.type; year: model.year || ""; rating: model.rating || 0
+                                active: cellRoot.GridView.isCurrentItem && !window.watchHistoryFocused
+                                onHoverEntered: { window.isKeyboardNav = false; window.hasGridSelection = true; window.watchHistoryFocused = false; cellRoot.GridView.view.currentIndex = index }
+                                onActivated: {
+                                    if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0, model.year, model.rating)
+                                    else loadSeriesDetails(model.imdbId, model.title, model.poster, model.year, model.rating)
                                 }
                             }
                         }
@@ -1349,7 +1471,7 @@ Item {
                     GridView {
                         id: searchGrid
                         anchors.fill: parent; visible: window.isSearchMode
-                        model: searchResults; cellWidth: Math.floor(width / 5); cellHeight: cellWidth * 1.5 + window.s(60)
+                        model: searchResults; cellWidth: Math.floor(width / 8); cellHeight: cellWidth * 1.5 + window.s(62)
                         boundsBehavior: Flickable.StopAtBounds; highlightFollowsCurrentItem: false; clip: true
                         ScrollBar.vertical: ScrollBar { active: true; contentItem: Rectangle { radius: window.s(2); color: window.surface2 } }
                         Behavior on contentY { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
@@ -1359,7 +1481,7 @@ Item {
                     GridView {
                         id: movieGrid
                         anchors.fill: parent; visible: !window.isSearchMode && window.mediaType === "movie"
-                        model: cachedTrendingMovies; cellWidth: Math.floor(width / 10); cellHeight: cellWidth * 1.5 + window.s(60)
+                        model: cachedTrendingMovies; cellWidth: Math.floor(width / 8); cellHeight: cellWidth * 1.5 + window.s(62)
                         header: dashboardHeaderComp; boundsBehavior: Flickable.StopAtBounds; highlightFollowsCurrentItem: false; clip: true
                         ScrollBar.vertical: ScrollBar { active: true; contentItem: Rectangle { radius: window.s(2); color: window.surface2 } }
                         Behavior on contentY { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
@@ -1368,7 +1490,7 @@ Item {
                     GridView {
                         id: tvGrid
                         anchors.fill: parent; visible: !window.isSearchMode && window.mediaType === "tv"
-                        model: cachedTrendingTv; cellWidth: Math.floor(width / 10); cellHeight: cellWidth * 1.5 + window.s(60)
+                        model: cachedTrendingTv; cellWidth: Math.floor(width / 8); cellHeight: cellWidth * 1.5 + window.s(62)
                         header: dashboardHeaderComp; boundsBehavior: Flickable.StopAtBounds; highlightFollowsCurrentItem: false; clip: true
                         ScrollBar.vertical: ScrollBar { active: true; contentItem: Rectangle { radius: window.s(2); color: window.surface2 } }
                         Behavior on contentY { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
@@ -1386,27 +1508,15 @@ Item {
             ColumnLayout {
                 Layout.preferredWidth: window.s(220); Layout.minimumWidth: window.s(220); Layout.maximumWidth: window.s(220)
                 Layout.fillHeight: true; spacing: window.s(12)
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: window.s(300); radius: window.s(14); color: window.crust; clip: true
-                    Image {
-                        anchors.fill: parent
-                        source: window.selectedPoster !== "" ? window.selectedPoster : ""
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true; smooth: true; cache: true
-                        sourceSize.width: window.s(440); sourceSize.height: window.s(600)
-                        visible: status === Image.Ready
-                    }
-                    Rectangle {
-                        anchors.fill: parent; color: window.surface0; radius: window.s(14)
-                        visible: window.selectedPoster === "" || parent.children[0].status === Image.Error || parent.children[0].status === Image.Loading
-                        Text { anchors.centerIn: parent; width: parent.width - window.s(10); text: window.selectedTitle; color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(14); wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter }
-                    }
-                }
-                Text {
-                    Layout.fillWidth: true; text: window.selectedTitle
-                    font.family: "JetBrains Mono"; font.pixelSize: window.s(16); font.weight: Font.Bold
-                    color: window.text; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter
-                    maximumLineCount: 3; elide: Text.ElideRight
+                MediaCard {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: width * 1.5 + window.s(62)
+                    imdbId: window.selectedImdbId
+                    cardTitle: window.selectedTitle
+                    poster: window.selectedPoster
+                    mediaType: "tv"
+                    year: window.selectedYear
+                    rating: window.selectedRating
                 }
                 Flickable {
                     Layout.fillWidth: true
@@ -1513,7 +1623,9 @@ Item {
                         highlightMoveVelocity: -1
                         delegate: HoverCard {
                             id: epCard
-                            width: ListView.view.width; height: window.s(58); z: 1
+                            x: window.s(6)
+                            width: ListView.view.width - window.s(12); height: window.s(58); z: 1
+                            transformOrigin: Item.Left
                             theme: window
                             scaleFunc: window.s
                             property bool isCurrent: ListView.isCurrentItem
@@ -1525,7 +1637,7 @@ Item {
 
                             onClicked: {
                                 epList.currentIndex = index
-                                startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, model.epNum)
+                                startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, model.epNum, window.selectedYear, window.selectedRating)
                             }
 
                             RowLayout {
