@@ -135,6 +135,17 @@ Item {
         border.width: 1
         clip: true
 
+        Image {
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: parent.width
+            height: parent.height - (tabBar.visible ? tabBar.height + window.s(20) : 0)
+            source: Qt.resolvedUrl("worldLow-pixels.svg")
+            fillMode: Image.PreserveAspectFit
+            opacity: 0.075
+            smooth: true
+        }
+
         Column {
             id: content
             anchors.top: parent.top
@@ -210,6 +221,7 @@ Item {
         }
 
         HorizontalTabBar {
+            id: tabBar
             anchors.bottom: parent.bottom
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottomMargin: window.s(20)
