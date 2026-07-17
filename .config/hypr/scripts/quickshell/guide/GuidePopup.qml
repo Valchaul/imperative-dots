@@ -987,32 +987,22 @@ Item {
                         
                         Item { Layout.fillWidth: true } 
                         
-                        Rectangle {
+                        ActionButton {
                             Layout.preferredWidth: root.s(110)
                             Layout.preferredHeight: root.s(44)
                             radius: root.s(22)
-                            color: launchMa.containsMouse ? Qt.alpha(root.ambientBlue, 0.9) : Qt.alpha(root.ambientBlue, 0.7)
-                            border.color: root.ambientBlue
-                            border.width: 1
-                            scale: launchMa.pressed ? 0.95 : (launchMa.containsMouse ? 1.05 : 1.0)
-                            
-                            Behavior on scale { NumberAnimation { duration: 200; easing.type: Easing.OutBack } }
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            
-                            RowLayout { 
-                                anchors.centerIn: parent
-                                spacing: root.s(8)
-                                Text { text: "󰐊"; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(20); color: root.base } 
-                                Text { text: "PLAY"; font.family: "JetBrains Mono"; font.weight: Font.Black; font.pixelSize: root.s(14); color: root.base } 
-                            }
-                            
-                            MouseArea { 
-                                id: launchMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", modulesDataModel.get(root.selectedModuleIndex).target]) 
-                            }
+
+                            theme: root
+                            scaleFunc: root.s
+                            icon: "󰐊"
+                            iconSize: 20
+                            label: "PLAY"
+                            labelSize: 14
+                            fontWeight: Font.Black
+                            itemSpacing: 8
+                            accentColor: root.ambientBlue
+
+                            onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", modulesDataModel.get(root.selectedModuleIndex).target])
                         }
                     }
 

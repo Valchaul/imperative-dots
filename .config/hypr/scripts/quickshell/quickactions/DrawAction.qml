@@ -480,19 +480,14 @@ Item {
                     anchors.centerIn: parent
                     spacing: s(6)
 
-                    Item {
-                        width: s(32); height: s(32)
-                        Rectangle {
-                            anchors.fill: parent; radius: s(14); z:-1
-                            color: zoomMinusMouse.containsMouse ? ((typeof mochaColors !== "undefined" && mochaColors && mochaColors.surface0) ? mochaColors.surface0 : Qt.rgba(root.baseTextColor.r, root.baseTextColor.g, root.baseTextColor.b, 0.1)) : "transparent"
-                        }
-                        Text {
-                            anchors.centerIn: parent; text: "\uF068"; font.family: root.iconFont; font.pixelSize: s(14); color: root.baseTextColor
-                        }
-                        MouseArea {
-                            id: zoomMinusMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: cameraRig.zoomBy(1.0 / 1.25)
-                        }
+                    IconTogglePill {
+                        theme: mochaColors
+                        scaleFunc: function(v) { return (typeof root.scaleFunc !== "undefined" && root.scaleFunc) ? root.scaleFunc(v) : v; }
+                        icon: "\uF068"
+                        iconSize: 14
+                        size: 32
+                        radius: s(14)
+                        onClicked: cameraRig.zoomBy(1.0 / 1.25)
                     }
 
                     Item {
@@ -514,19 +509,14 @@ Item {
                         }
                     }
 
-                    Item {
-                        width: s(32); height: s(32)
-                        Rectangle {
-                            anchors.fill: parent; radius: s(14); z:-1
-                            color: zoomPlusMouse.containsMouse ? ((typeof mochaColors !== "undefined" && mochaColors && mochaColors.surface0) ? mochaColors.surface0 : Qt.rgba(root.baseTextColor.r, root.baseTextColor.g, root.baseTextColor.b, 0.1)) : "transparent"
-                        }
-                        Text {
-                            anchors.centerIn: parent; text: "\uF067"; font.family: root.iconFont; font.pixelSize: s(14); color: root.baseTextColor
-                        }
-                        MouseArea {
-                            id: zoomPlusMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: cameraRig.zoomBy(1.25)
-                        }
+                    IconTogglePill {
+                        theme: mochaColors
+                        scaleFunc: function(v) { return (typeof root.scaleFunc !== "undefined" && root.scaleFunc) ? root.scaleFunc(v) : v; }
+                        icon: "\uF067"
+                        iconSize: 14
+                        size: 32
+                        radius: s(14)
+                        onClicked: cameraRig.zoomBy(1.25)
                     }
                 }
             }
@@ -540,25 +530,14 @@ Item {
                 border.width: 1
                 border.color: root.panelBorderColor
                 
-                Rectangle {
-                    anchors.centerIn: parent; width: s(32); height: s(32); radius: s(14); z:-1
-                    color: copyMouse.containsMouse ? ((typeof mochaColors !== "undefined" && mochaColors && mochaColors.surface0) ? mochaColors.surface0 : Qt.rgba(root.baseTextColor.r, root.baseTextColor.g, root.baseTextColor.b, 0.1)) : "transparent"
-                }
-
-                Text {
+                IconTogglePill {
                     anchors.centerIn: parent
-                    text: "\uF0C5" 
-                    font.family: root.iconFont
-                    font.pixelSize: s(14)
-                    color: root.baseTextColor
-                    opacity: copyMouse.pressed ? 0.5 : 1.0
-                }
-
-                MouseArea {
-                    id: copyMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
+                    theme: mochaColors
+                    scaleFunc: function(v) { return (typeof root.scaleFunc !== "undefined" && root.scaleFunc) ? root.scaleFunc(v) : v; }
+                    icon: "\uF0C5"
+                    iconSize: 14
+                    size: 32
+                    radius: s(14)
                     onClicked: {
                         var tempPath = paths.getRunDir("quickactions") + "/drawing.png";
                         drawCanvas.save(tempPath);
@@ -896,67 +875,29 @@ Item {
                 spacing: s(16)
 
                 // --- UNDO BUTTON ---
-                Item {
-                    width: s(32)
-                    height: s(32)
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: s(14)
-                        color: undoMouse.containsMouse && root.historyStep >= 0 ? ((typeof mochaColors !== "undefined" && mochaColors && mochaColors.surface0) ? mochaColors.surface0 : Qt.rgba(root.baseTextColor.r, root.baseTextColor.g, root.baseTextColor.b, 0.1)) : "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        z: -1
-                    }
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        text: "\uF0E2" 
-                        font.family: root.iconFont
-                        font.pixelSize: s(14)
-                        color: root.baseTextColor
-                        opacity: root.historyStep >= 0 ? (undoMouse.pressed ? 0.5 : 1.0) : 0.3
-                    }
-                    MouseArea {
-                        id: undoMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: root.historyStep >= 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: { if (root.historyStep >= 0) root.undo() }
-                    }
+                IconTogglePill {
+                    theme: mochaColors
+                    scaleFunc: function(v) { return (typeof root.scaleFunc !== "undefined" && root.scaleFunc) ? root.scaleFunc(v) : v; }
+                    icon: "\uF0E2"
+                    iconSize: 14
+                    size: 32
+                    radius: s(14)
+                    enabled: root.historyStep >= 0
+                    opacity: root.historyStep >= 0 ? 1.0 : 0.3
+                    onClicked: root.undo()
                 }
 
                 // --- REDO BUTTON ---
-                Item {
-                    width: s(32)
-                    height: s(32)
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: s(14)
-                        color: redoMouse.containsMouse && root.historyStep < root.actionHistory.length - 1 ? ((typeof mochaColors !== "undefined" && mochaColors && mochaColors.surface0) ? mochaColors.surface0 : Qt.rgba(root.baseTextColor.r, root.baseTextColor.g, root.baseTextColor.b, 0.1)) : "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        z: -1
-                    }
-                    
-                    Text {
-                        anchors.centerIn: parent
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        text: "\uF01E" 
-                        font.family: root.iconFont
-                        font.pixelSize: s(14)
-                        color: root.baseTextColor
-                        opacity: root.historyStep < root.actionHistory.length - 1 ? (redoMouse.pressed ? 0.5 : 1.0) : 0.3
-                    }
-                    MouseArea {
-                        id: redoMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: root.historyStep < root.actionHistory.length - 1 ? Qt.PointingHandCursor : Qt.ArrowCursor
-                        onClicked: { if (root.historyStep < root.actionHistory.length - 1) root.redo() }
-                    }
+                IconTogglePill {
+                    theme: mochaColors
+                    scaleFunc: function(v) { return (typeof root.scaleFunc !== "undefined" && root.scaleFunc) ? root.scaleFunc(v) : v; }
+                    icon: "\uF01E"
+                    iconSize: 14
+                    size: 32
+                    radius: s(14)
+                    enabled: root.historyStep < root.actionHistory.length - 1
+                    opacity: root.historyStep < root.actionHistory.length - 1 ? 1.0 : 0.3
+                    onClicked: root.redo()
                 }
 
                 // --- SEPARATOR ---
@@ -1079,16 +1020,17 @@ Item {
                 }
 
                 // --- COLOR INDICATOR ---
-                Item {
-                    width: s(32)
-                    height: s(32)
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: s(14)
-                        color: colorIndicatorMouse.containsMouse ? ((typeof mochaColors !== "undefined" && mochaColors && mochaColors.surface0) ? mochaColors.surface0 : Qt.rgba(root.baseTextColor.r, root.baseTextColor.g, root.baseTextColor.b, 0.1)) : "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        z: -1
+                IconTogglePill {
+                    theme: mochaColors
+                    scaleFunc: function(v) { return (typeof root.scaleFunc !== "undefined" && root.scaleFunc) ? root.scaleFunc(v) : v; }
+                    size: 32
+                    radius: s(14)
+                    onClicked: {
+                        root.showColorPicker = !root.showColorPicker;
+                        root.showSizeConfig = false;
+                        if (root.currentTool === "eraser" || root.currentTool === "mouse") {
+                            root.currentTool = "pen";
+                        }
                     }
 
                     Rectangle {
@@ -1097,24 +1039,10 @@ Item {
                         radius: s(14)
                         color: root.currentColor
                         anchors.centerIn: parent
-                        
+
                         border.width: root.currentTool !== "eraser" ? s(2) : 0
                         border.color: root.baseTextColor
                         opacity: (root.currentTool === "eraser" || root.currentTool === "mouse") ? 0.3 : 1.0
-                    }
-                    
-                    MouseArea {
-                        id: colorIndicatorMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.showColorPicker = !root.showColorPicker;
-                            root.showSizeConfig = false;
-                            if (root.currentTool === "eraser" || root.currentTool === "mouse") {
-                                root.currentTool = "pen";
-                            }
-                        }
                     }
                 }
 
@@ -1126,45 +1054,25 @@ Item {
                 }
 
                 // --- CLEAR CANVAS BUTTON ---
-                Item {
-                    width: s(32)
-                    height: s(32)
+                IconTogglePill {
+                    theme: mochaColors
+                    scaleFunc: function(v) { return (typeof root.scaleFunc !== "undefined" && root.scaleFunc) ? root.scaleFunc(v) : v; }
+                    icon: "\uF1F8" // fa-trash
+                    iconSize: 14
+                    size: 32
+                    radius: s(14)
+                    idleColor: (typeof mochaColors !== "undefined" && mochaColors && mochaColors.red) ? mochaColors.red : "#f38ba8"
+                    hoverColor: idleColor
+                    onClicked: {
+                        root.commitAction({ type: "clear" });
+                        drawCanvas._clearPending = true;
+                        drawCanvas.requestPaint();
+                        root.showColorPicker = false;
+                        root.showSizeConfig = false;
 
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: s(14)
-                        color: clearMouse.containsMouse ? ((typeof mochaColors !== "undefined" && mochaColors && mochaColors.surface0) ? mochaColors.surface0 : Qt.rgba(root.baseTextColor.r, root.baseTextColor.g, root.baseTextColor.b, 0.1)) : "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        z: -1
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        text: "\uF1F8" // fa-trash
-                        font.family: root.iconFont
-                        color: (typeof mochaColors !== "undefined" && mochaColors && mochaColors.red) ? mochaColors.red : "#f38ba8"
-                        font.pixelSize: s(14)
-                        opacity: clearMouse.pressed ? 0.5 : (clearMouse.containsMouse ? 1.0 : 0.7)
-                    }
-
-                    MouseArea {
-                        id: clearMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.commitAction({ type: "clear" });
-                            drawCanvas._clearPending = true;
-                            drawCanvas.requestPaint();
-                            root.showColorPicker = false;
-                            root.showSizeConfig = false;
-
-                            zoomContainer.scale = 1.0;
-                            zoomContainer.x = (cameraRig.width - zoomContainer.width) / 2;
-                            zoomContainer.y = (cameraRig.height - zoomContainer.height) / 2;
-                        }
+                        zoomContainer.scale = 1.0;
+                        zoomContainer.x = (cameraRig.width - zoomContainer.width) / 2;
+                        zoomContainer.y = (cameraRig.height - zoomContainer.height) / 2;
                     }
                 }
             }

@@ -934,10 +934,22 @@ Item {
         }
     }
 
-    component PosterDelegate: Rectangle {
+    component PosterDelegate: HoverCard {
+        id: posterCard
         width: window.s(120); height: width * 1.5
-        radius: window.s(10); color: window.crust; clip: true
-        property bool isHovered: posterMouse.containsMouse
+        theme: window
+        scaleFunc: window.s
+        radius: window.s(10)
+        color: window.crust
+        border.width: 0
+        clip: true
+        hoverScale: 1.0
+        pressScale: 1.0
+        onClicked: {
+            if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0)
+            else loadSeriesDetails(model.imdbId, model.title, model.poster)
+        }
+
         Image {
             id: posterImg
             anchors.fill: parent
@@ -980,15 +992,8 @@ Item {
         Rectangle {
             anchors.fill: parent; radius: window.s(10)
             color: window.mediaType === "tv" ? window.blue : window.mauve
-            opacity: parent.isHovered ? 0.3 : 0
+            opacity: posterCard.containsMouse ? 0.3 : 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
-        }
-        MouseArea {
-            id: posterMouse; anchors.fill: parent; hoverEnabled: true
-            onClicked: {
-                if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0)
-                else loadSeriesDetails(model.imdbId, model.title, model.poster)
-            }
         }
     }
 
@@ -1029,30 +1034,28 @@ Item {
                             }
                             remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 200 } }
                             displaced: Transition { NumberAnimation { property: "x"; duration: 300; easing.type: Easing.OutQuart } }
-                            delegate: Rectangle {
+                            delegate: HoverCard {
                                 width: queryText.width + window.s(35); height: window.s(32)
-                                radius: window.s(8); color: window.surface0
-                                border.color: histMouse.containsMouse ? window.surface2 : window.surface1
+                                theme: window
+                                scaleFunc: window.s
+                                borderColorNormal: window.surface1
+                                onClicked: { searchInput.text = model.query; doSearch(model.query) }
+
                                 Text {
                                     id: queryText; text: model.query; color: window.text
                                     font.family: "JetBrains Mono"; font.pixelSize: window.s(13)
                                     anchors.left: parent.left; anchors.leftMargin: window.s(10)
                                     anchors.verticalCenter: parent.verticalCenter
                                 }
-                                MouseArea {
-                                    id: histMouse; anchors.fill: parent; hoverEnabled: true
-                                    onClicked: { searchInput.text = model.query; doSearch(model.query) }
-                                }
-                                Rectangle {
-                                    width: window.s(20); height: window.s(20); radius: window.s(10)
-                                    color: closeMouse.containsMouse ? window.surface1 : "transparent"
+                                IconTogglePill {
                                     anchors.right: parent.right; anchors.rightMargin: window.s(5)
                                     anchors.verticalCenter: parent.verticalCenter
-                                    Text { text: "×"; anchors.centerIn: parent; color: window.subtext0; font.pixelSize: window.s(14) }
-                                    MouseArea {
-                                        id: closeMouse; anchors.fill: parent; hoverEnabled: true
-                                        onClicked: { searchHistoryModel.remove(index); window.saveHistory() }
-                                    }
+                                    theme: window
+                                    scaleFunc: window.s
+                                    icon: "×"
+                                    iconSize: 14
+                                    size: 20
+                                    onClicked: { searchHistoryModel.remove(index); window.saveHistory() }
                                 }
                             }
                         }
@@ -1118,30 +1121,16 @@ Item {
                     anchors.fill: parent; anchors.margins: window.s(15); spacing: window.s(10)
                     RowLayout {
                         Layout.fillWidth: true; spacing: window.s(15)
-                        Rectangle {
-                            Layout.preferredWidth: window.s(200); Layout.preferredHeight: window.s(36); radius: window.s(10); color: window.surface0
-                            Rectangle {
-                                id: tabHighlight
-                                width: parent.width / 2 - window.s(4); height: parent.height - window.s(8)
-                                y: window.s(4); radius: window.s(8); color: window.mediaType === "movie" ? window.mauve : window.blue; z: 0
-                                property real targetX: window.mediaType === "movie" ? window.s(4) : (parent.width / 2)
-                                property real actualX: targetX
-                                Behavior on actualX { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }
-                                x: actualX
-                            }
-                            RowLayout {
-                                anchors.fill: parent; spacing: 0
-                                MouseArea {
-                                    Layout.fillWidth: true; Layout.fillHeight: true
-                                    onClicked: { window.mediaType = "movie"; if (searchInput.text !== "") doSearch(searchInput.text) }
-                                    Text { anchors.centerIn: parent; text: "Movies"; font.family: "JetBrains Mono"; font.weight: window.mediaType === "movie" ? Font.Bold : Font.Medium; font.pixelSize: window.s(13); color: window.mediaType === "movie" ? window.crust : window.text }
-                                }
-                                MouseArea {
-                                    Layout.fillWidth: true; Layout.fillHeight: true
-                                    onClicked: { window.mediaType = "tv"; if (searchInput.text !== "") doSearch(searchInput.text) }
-                                    Text { anchors.centerIn: parent; text: "TV Shows"; font.family: "JetBrains Mono"; font.weight: window.mediaType === "tv" ? Font.Bold : Font.Medium; font.pixelSize: window.s(13); color: window.mediaType === "tv" ? window.crust : window.text }
-                                }
-                            }
+                        HorizontalTabBar {
+                            Layout.preferredWidth: window.s(260); Layout.preferredHeight: window.s(36)
+                            theme: window
+                            scaleFunc: window.s
+                            tabs: [{ tabId: "movie", icon: "󰟞", label: "Movies" }, { tabId: "tv", icon: "󰿎", label: "TV Shows" }]
+                            activeTab: window.mediaType
+                            accentColor: window.mediaType === "movie" ? window.mauve : window.blue
+                            containerBorderColor: "transparent"
+                            inactiveFontWeight: Font.Medium
+                            onTabSelected: (tabId) => { window.mediaType = tabId; if (searchInput.text !== "") doSearch(searchInput.text) }
                         }
                         Item { Layout.fillWidth: true }
                         CustomComboBox {
@@ -1166,8 +1155,18 @@ Item {
                         normalBgColor: window.surface0
                         focusBgColor: Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.6)
                         fontSize: 15
-                        hMargin: 15
+                        hMargin: 38
                         placeholder: "Search"
+
+                        Text {
+                            text: "󰍉"
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: window.s(16)
+                            color: window.subtext0
+                            anchors.left: parent.left
+                            anchors.leftMargin: window.s(14)
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
 
                         onTextChanged: {
                             if (text.trim() === "") { searchResults.clear(); window.isSearchingNetwork = false; searchDebounceTimer.stop() }
@@ -1437,13 +1436,14 @@ Item {
                         opacity: window.selectedDescription !== "" ? 1 : 0
                     }
                 }
-                Rectangle {
-                    Layout.fillWidth: true; Layout.preferredHeight: window.s(45); radius: window.s(10)
-                    property bool isHovered: backMouse.containsMouse
-                    color: isHovered ? window.surface2 : window.surface1
-                    Behavior on color { ColorAnimation { duration: 200 } }
-                    Text { anchors.centerIn: parent; text: "← Back"; font.family: "JetBrains Mono"; font.pixelSize: window.s(14); font.weight: Font.Medium; color: window.text }
-                    MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { window.currentView = "search"; searchInput.inputItem.forceActiveFocus(); saveUiState() } }
+                ActionButton {
+                    Layout.fillWidth: true; Layout.preferredHeight: window.s(45)
+                    theme: window
+                    scaleFunc: window.s
+                    label: "← Back"
+                    labelSize: 14
+                    fontWeight: Font.Medium
+                    onClicked: { window.currentView = "search"; searchInput.inputItem.forceActiveFocus(); saveUiState() }
                 }
                 Item { Layout.fillHeight: true }
             }
@@ -1522,48 +1522,48 @@ Item {
                         }
                         highlightFollowsCurrentItem: true
                         highlightMoveVelocity: -1
-                        delegate: Item {
+                        delegate: HoverCard {
+                            id: epCard
                             width: ListView.view.width; height: window.s(58); z: 1
+                            theme: window
+                            scaleFunc: window.s
                             property bool isCurrent: ListView.isCurrentItem
-                            Rectangle {
-                                anchors.fill: parent; radius: window.s(10)
-                                color: epMouse.containsMouse || isCurrent ? window.surface0 : "transparent"
-                                border.color: epMouse.containsMouse || isCurrent ? window.surface2 : "transparent"; border.width: 1
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                Behavior on border.color { ColorAnimation { duration: 150 } }
-                                RowLayout {
-                                    anchors.fill: parent; anchors.margins: window.s(10); spacing: window.s(12)
-                                    Rectangle {
-                                        Layout.preferredWidth: window.s(36); Layout.preferredHeight: window.s(36)
-                                        radius: window.s(8)
-                                        color: isCurrent || epMouse.containsMouse ? window.blue : window.surface1
+
+                            // isCurrent always wins over hover, rather than the usual
+                            // hover-tint-over-base formula HoverCard defaults to.
+                            color: containsMouse || isCurrent ? window.surface0 : "transparent"
+                            border.color: containsMouse || isCurrent ? window.surface2 : "transparent"
+
+                            onClicked: {
+                                epList.currentIndex = index
+                                startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, model.epNum)
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent; anchors.margins: window.s(10); spacing: window.s(12)
+                                Rectangle {
+                                    Layout.preferredWidth: window.s(36); Layout.preferredHeight: window.s(36)
+                                    radius: window.s(8)
+                                    color: epCard.isCurrent || epCard.containsMouse ? window.blue : window.surface1
+                                    Behavior on color { ColorAnimation { duration: 200 } }
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: model.epNum
+                                        font.family: "JetBrains Mono"; font.pixelSize: window.s(13); font.weight: Font.Bold
+                                        color: epCard.isCurrent || epCard.containsMouse ? window.crust : window.subtext0
                                         Behavior on color { ColorAnimation { duration: 200 } }
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: model.epNum
-                                            font.family: "JetBrains Mono"; font.pixelSize: window.s(13); font.weight: Font.Bold
-                                            color: isCurrent || epMouse.containsMouse ? window.crust : window.subtext0
-                                            Behavior on color { ColorAnimation { duration: 200 } }
-                                        }
-                                    }
-                                    Column {
-                                        Layout.fillWidth: true; spacing: window.s(2)
-                                        Text {
-                                            width: parent.width
-                                            text: model.epTitle
-                                            font.family: "JetBrains Mono"
-                                            font.pixelSize: model.hasRealTitle ? window.s(13) : window.s(12)
-                                            font.weight: model.hasRealTitle ? Font.Medium : Font.Normal
-                                            color: model.hasRealTitle ? window.text : window.subtext0
-                                            elide: Text.ElideRight
-                                        }
                                     }
                                 }
-                                MouseArea {
-                                    id: epMouse; anchors.fill: parent; hoverEnabled: true
-                                    onClicked: {
-                                        epList.currentIndex = index
-                                        startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, model.epNum)
+                                Column {
+                                    Layout.fillWidth: true; spacing: window.s(2)
+                                    Text {
+                                        width: parent.width
+                                        text: model.epTitle
+                                        font.family: "JetBrains Mono"
+                                        font.pixelSize: model.hasRealTitle ? window.s(13) : window.s(12)
+                                        font.weight: model.hasRealTitle ? Font.Medium : Font.Normal
+                                        color: model.hasRealTitle ? window.text : window.subtext0
+                                        elide: Text.ElideRight
                                     }
                                 }
                             }
@@ -1625,12 +1625,15 @@ Item {
                                 elide: Text.ElideRight; Layout.fillWidth: true
                             }
                         }
-                        Rectangle {
-                            Layout.preferredWidth: window.s(32); Layout.preferredHeight: window.s(32); radius: window.s(8)
-                            color: modalCloseMouse.containsMouse ? window.surface2 : "transparent"
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Text { anchors.centerIn: parent; text: "×"; color: window.subtext0; font.pixelSize: window.s(20) }
-                            MouseArea { id: modalCloseMouse; anchors.fill: parent; hoverEnabled: true; onClicked: window.closeSourceModal() }
+                        IconTogglePill {
+                            Layout.preferredWidth: window.s(32); Layout.preferredHeight: window.s(32)
+                            theme: window
+                            scaleFunc: window.s
+                            icon: "×"
+                            iconSize: 20
+                            size: 32
+                            radius: window.s(16)
+                            onClicked: window.closeSourceModal()
                         }
                     }
                 }
@@ -1742,15 +1745,14 @@ Item {
                             color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(13)
                             wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; lineHeight: 1.3
                         }
-                        Rectangle {
-                            Layout.fillWidth: true; Layout.preferredHeight: window.s(45); radius: window.s(10)
-                            color: fmhyMouse.containsMouse ? window.blue : window.surface1
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Text { anchors.centerIn: parent; text: "Browse Alternative Sites"; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(13); color: fmhyMouse.containsMouse ? window.crust : window.text }
-                            MouseArea {
-                                id: fmhyMouse; anchors.fill: parent; hoverEnabled: true
-                                onClicked: { Quickshell.execDetached(["xdg-open", "https://fmhy.net/video#streaming-sites"]); window.closeSourceModal() }
-                            }
+                        ActionButton {
+                            Layout.fillWidth: true; Layout.preferredHeight: window.s(45)
+                            theme: window
+                            scaleFunc: window.s
+                            label: "Browse Alternative Sites"
+                            labelSize: 13
+                            accentColor: window.blue
+                            onClicked: { Quickshell.execDetached(["xdg-open", "https://fmhy.net/video#streaming-sites"]); window.closeSourceModal() }
                         }
                     }
                 }

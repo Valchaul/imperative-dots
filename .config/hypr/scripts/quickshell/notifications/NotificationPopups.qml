@@ -318,57 +318,29 @@ PanelWindow {
 
                             Repeater {
                                 model: delegateRoot.actionArray
-                                delegate: Rectangle {
+                                delegate: ActionButton {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: 32 * popupWindow.uiScale
-                                    radius: 8 * popupWindow.uiScale
 
-                                    property bool isPrimary: index === 0
+                                    theme: _theme
+                                    scaleFunc: function(v) { return v * popupWindow.uiScale; }
+                                    label: modelData.text || "Action"
+                                    labelSize: 12
+                                    accentColor: index === 0 ? _theme.blue : _theme.overlay1
 
-                                    color: {
-                                        if (!_theme.blue) return "transparent";
-                                        if (isPrimary) {
-                                            return actionMouseArea.containsMouse ? _theme.blue : Qt.darker(_theme.blue, 1.2)
-                                        } else {
-                                            return actionMouseArea.containsMouse ? _theme.surface2 : _theme.surface1
-                                        }
-                                    }
-
-                                    border.color: (!_theme.blue) ? "transparent" : (isPrimary ? _theme.blue : _theme.surface2)
-                                    border.width: 1
-
-                                    Behavior on color { ColorAnimation { duration: 150 } }
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: modelData.text || "Action"
-                                        font.family: "JetBrains Mono"
-                                        font.weight: Font.Bold
-                                        font.pixelSize: 12 * popupWindow.uiScale
-                                        color: isPrimary ? _theme.crust : _theme.text
-                                    }
-
-                                    MouseArea {
-                                        id: actionMouseArea
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        z: 10
-
-                                        onClicked: {
-                                            // modelData.id is from our own JSON (key "id") — correct
-                                            // n.actions[i].identifier is the QObject property — correct
-                                            var n = popupWindow.getNotif(delegateRoot.popupUid);
-                                            if (n && n.actions) {
-                                                for (var i = 0; i < n.actions.length; i++) {
-                                                    if (n.actions[i].identifier === modelData.id) {
-                                                        n.actions[i].invoke();
-                                                        break;
-                                                    }
+                                    onClicked: {
+                                        // modelData.id is from our own JSON (key "id") — correct
+                                        // n.actions[i].identifier is the QObject property — correct
+                                        var n = popupWindow.getNotif(delegateRoot.popupUid);
+                                        if (n && n.actions) {
+                                            for (var i = 0; i < n.actions.length; i++) {
+                                                if (n.actions[i].identifier === modelData.id) {
+                                                    n.actions[i].invoke();
+                                                    break;
                                                 }
                                             }
-                                            Qt.callLater(function() { popupWindow.removeNotif(delegateRoot.popupUid); });
                                         }
+                                        Qt.callLater(function() { popupWindow.removeNotif(delegateRoot.popupUid); });
                                     }
                                 }
                             }

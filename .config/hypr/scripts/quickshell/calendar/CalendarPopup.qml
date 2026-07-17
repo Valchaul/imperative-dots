@@ -824,24 +824,28 @@ Item {
                         Layout.fillWidth: true
                         
                         // "Return to Today" Home Button
-                        Rectangle {
-                            Layout.preferredWidth: Math.round(32 * window.sf); Layout.preferredHeight: Math.round(32 * window.sf); radius: Math.round(16 * window.sf)
-                            color: homeMa.containsMouse ? window.surface1 : "transparent"
+                        IconTogglePill {
+                            Layout.preferredWidth: window.s(32); Layout.preferredHeight: window.s(32)
+                            theme: window
+                            scaleFunc: window.s
+                            icon: "󰃭"
+                            iconSize: 16
+                            size: 32
+                            radius: window.s(16)
                             opacity: window.targetMonthOffset !== 0 ? 1.0 : 0.0
                             visible: opacity > 0
-                            Behavior on opacity { NumberAnimation { duration: 200 } }
-                            Text { anchors.centerIn: parent; text: "󰃭"; font.family: "Iosevka Nerd Font"; color: window.text; font.pixelSize: Math.round(16 * window.sf) }
-                            MouseArea { 
-                                id: homeMa; anchors.fill: parent; hoverEnabled: window.targetMonthOffset !== 0; 
-                                onClicked: if (window.targetMonthOffset !== 0) window.setMonthOffset(0) 
-                            }
+                            onClicked: window.setMonthOffset(0)
                         }
 
-                        Rectangle {
-                            Layout.preferredWidth: Math.round(32 * window.sf); Layout.preferredHeight: Math.round(32 * window.sf); radius: Math.round(16 * window.sf)
-                            color: prevMa.containsMouse ? window.surface1 : "transparent"
-                            Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; color: window.text; font.pixelSize: Math.round(16 * window.sf) }
-                            MouseArea { id: prevMa; anchors.fill: parent; hoverEnabled: true; onClicked: window.setMonthOffset(window.targetMonthOffset - 1) }
+                        IconTogglePill {
+                            Layout.preferredWidth: window.s(32); Layout.preferredHeight: window.s(32)
+                            theme: window
+                            scaleFunc: window.s
+                            icon: ""
+                            iconSize: 16
+                            size: 32
+                            radius: window.s(16)
+                            onClicked: window.setMonthOffset(window.targetMonthOffset - 1)
                         }
                         
                         Text {
@@ -859,22 +863,27 @@ Item {
                             transform: Translate { x: window.calendarContentOffset }
                         }
 
-                        Rectangle {
-                            Layout.preferredWidth: Math.round(32 * window.sf); Layout.preferredHeight: Math.round(32 * window.sf); radius: Math.round(16 * window.sf)
-                            color: nextMa.containsMouse ? window.surface1 : "transparent"
-                            Text { anchors.centerIn: parent; text: ""; font.family: "Iosevka Nerd Font"; color: window.text; font.pixelSize: Math.round(16 * window.sf) }
-                            MouseArea { id: nextMa; anchors.fill: parent; hoverEnabled: true; onClicked: window.setMonthOffset(window.targetMonthOffset + 1) }
+                        IconTogglePill {
+                            Layout.preferredWidth: window.s(32); Layout.preferredHeight: window.s(32)
+                            theme: window
+                            scaleFunc: window.s
+                            icon: ""
+                            iconSize: 16
+                            size: 32
+                            radius: window.s(16)
+                            onClicked: window.setMonthOffset(window.targetMonthOffset + 1)
                         }
 
-                        Rectangle {
-                            Layout.preferredWidth: Math.round(32 * window.sf); Layout.preferredHeight: Math.round(32 * window.sf); radius: Math.round(16 * window.sf)
-                            color: diaryMa.containsMouse ? window.surface1 : "transparent"
-                            Text { anchors.centerIn: parent; text: "+"; font.family: "Iosevka Nerd Font"; color: diaryMa.containsMouse ? window.mauve : window.text; font.pixelSize: Math.round(32 * window.sf) }
-                            MouseArea { 
-                                id: diaryMa; anchors.fill: parent; hoverEnabled: true; 
-                                onClicked: Quickshell.execDetached(["bash", window.scriptsDir + "/diary_manager.sh"]) 
-                            }
-                            Behavior on color { ColorAnimation { duration: 150 } }
+                        IconTogglePill {
+                            Layout.preferredWidth: window.s(32); Layout.preferredHeight: window.s(32)
+                            theme: window
+                            scaleFunc: window.s
+                            icon: "+"
+                            iconSize: 32
+                            size: 32
+                            radius: window.s(16)
+                            hoverColor: window.mauve
+                            onClicked: Quickshell.execDetached(["bash", window.scriptsDir + "/diary_manager.sh"])
                         }
                     }
 
@@ -1323,23 +1332,17 @@ Item {
                         
                         Item { Layout.fillWidth: true }
                         
-                        Rectangle {
-                            Layout.preferredWidth: Math.round(120 * window.sf); Layout.preferredHeight: Math.round(36 * window.sf); radius: Math.round(10 * window.sf)
-                            color: schLinkMa.containsMouse ? window.mauve : Qt.alpha(window.surface1, 0.5)
-                            border.color: window.mauve; border.width: 1
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            
-                            RowLayout {
-                                anchors.centerIn: parent
-                                spacing: Math.round(6 * window.sf)
-                                Text { text: "Open Web"; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: Math.round(14 * window.sf); color: schLinkMa.containsMouse ? window.base : window.text }
-                                Text { text: ""; font.family: "Iosevka Nerd Font"; font.pixelSize: Math.round(14 * window.sf); color: schLinkMa.containsMouse ? window.base : window.text }
-                            }
-                            
-                            MouseArea {
-                                id: schLinkMa; anchors.fill: parent; hoverEnabled: true
-                                onClicked: if(window.scheduleData && window.scheduleData.link) Quickshell.execDetached(["xdg-open", window.scheduleData.link])
-                            }
+                        ActionButton {
+                            Layout.preferredWidth: Math.round(120 * window.sf)
+                            Layout.preferredHeight: Math.round(36 * window.sf)
+                            theme: window
+                            scaleFunc: window.s
+                            label: "Open Web"
+                            labelSize: 14
+                            icon: ""
+                            iconSize: 14
+                            accentColor: window.mauve
+                            onClicked: if(window.scheduleData && window.scheduleData.link) Quickshell.execDetached(["xdg-open", window.scheduleData.link])
                         }
                     }
 

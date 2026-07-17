@@ -559,60 +559,56 @@ Item {
                             Layout.preferredHeight: window.s(40)
 
                             // Universal Return Arrow (Back to Daily / App List)
-                            Rectangle {
+                            IconTogglePill {
                                 anchors.fill: parent
+                                theme: window
+                                scaleFunc: window.s
+                                icon: "󰁍"
+                                iconSize: 18
+                                size: 40
                                 radius: window.s(20)
-                                color: backMa.containsMouse ? window.surface0 : "transparent"
                                 opacity: (window.selectedAppClass !== "" || window.isWeekView) ? 1.0 : 0.0
                                 visible: opacity > 0
-                                Behavior on opacity { NumberAnimation { duration: 350; easing.type: Easing.OutQuint } }
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                
-                                Text { anchors.centerIn: parent; font.family: "Iosevka Nerd Font"; text: "󰁍"; color: window.text; font.pixelSize: window.s(18) }
-                                MouseArea { 
-                                    id: backMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; 
-                                    onClicked: { 
-                                        if (window.selectedAppClass !== "") {
-                                            window.selectedAppClass = ""; 
-                                            window.selectedAppName = ""; 
-                                            window.selectedAppIcon = ""; 
-                                            window.requestDataUpdate(); 
-                                        } else if (window.isWeekView) {
-                                            window.isWeekView = false;
-                                        }
-                                    } 
+                                onClicked: {
+                                    if (window.selectedAppClass !== "") {
+                                        window.selectedAppClass = "";
+                                        window.selectedAppName = "";
+                                        window.selectedAppIcon = "";
+                                        window.requestDataUpdate();
+                                    } else if (window.isWeekView) {
+                                        window.isWeekView = false;
+                                    }
                                 }
                             }
 
                             // Week View Open Button
-                            Rectangle {
+                            IconTogglePill {
                                 anchors.fill: parent
+                                theme: window
+                                scaleFunc: window.s
+                                icon: "󰃭"
+                                iconSize: 18
+                                size: 40
                                 radius: window.s(20)
-                                color: weekMa.containsMouse ? window.surface0 : "transparent"
                                 opacity: (window.selectedAppClass === "" && !window.isWeekView) ? 1.0 : 0.0
                                 visible: opacity > 0
-                                Behavior on opacity { NumberAnimation { duration: 350; easing.type: Easing.OutQuint } }
-                                Behavior on color { ColorAnimation { duration: 150 } }
-                                
-                                Text { anchors.centerIn: parent; font.family: "Iosevka Nerd Font"; text: "󰃭"; color: window.text; font.pixelSize: window.s(18) }
-                                MouseArea { 
-                                    id: weekMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; 
-                                    onClicked: window.isWeekView = true 
-                                }
+                                onClicked: window.isWeekView = true
                             }
                         }
 
                         // Prev Week/Day Arrow
-                        Rectangle {
+                        IconTogglePill {
                             Layout.preferredWidth: window.s(40)
                             Layout.preferredHeight: window.s(40)
+                            theme: window
+                            scaleFunc: window.s
+                            icon: "󰅁"
+                            iconSize: 18
+                            size: 40
                             radius: window.s(20)
-                            color: prevWeekMa.containsMouse ? window.surface0 : "transparent"
-                            Behavior on color { ColorAnimation { duration: 150 } }
-                            Text { anchors.centerIn: parent; font.family: "Iosevka Nerd Font"; text: "󰅁"; color: window.text; font.pixelSize: window.s(18) }
-                            MouseArea { id: prevWeekMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: changeDay(window.isWeekView ? -7 : -1) }
+                            onClicked: changeDay(window.isWeekView ? -7 : -1)
                         }
-                    }                   
+                    }
                     // Title Area
                     RowLayout {
                         Layout.fillWidth: true
@@ -652,14 +648,16 @@ Item {
                     }
 
                     // Next Week/Day Arrow
-                    Rectangle {
+                    IconTogglePill {
                         Layout.preferredWidth: window.s(40)
                         Layout.preferredHeight: window.s(40)
+                        theme: window
+                        scaleFunc: window.s
+                        icon: "󰅂"
+                        iconSize: 18
+                        size: 40
                         radius: window.s(20)
-                        color: nextWeekMa.containsMouse ? window.surface0 : "transparent"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                        Text { anchors.centerIn: parent; font.family: "Iosevka Nerd Font"; text: "󰅂"; color: window.text; font.pixelSize: window.s(18) }
-                        MouseArea { id: nextWeekMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: changeDay(window.isWeekView ? 7 : 1) }
+                        onClicked: changeDay(window.isWeekView ? 7 : 1)
                     }
                 }
 

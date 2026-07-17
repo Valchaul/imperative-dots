@@ -329,27 +329,18 @@ Item {
                                 }
 
                                 // Clear Group Button
-                                Rectangle {
+                                IconTogglePill {
                                     Layout.preferredWidth: window.s(26)
                                     Layout.preferredHeight: window.s(26)
+                                    theme: window
+                                    scaleFunc: window.s
+                                    icon: "󰅖"
+                                    iconSize: 14
+                                    size: 26
                                     radius: window.s(13)
-                                    color: groupClearMa.containsMouse ? window.surface2 : "transparent"
-                                    Behavior on color { ColorAnimation { duration: 150 } }
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        font.family: "Iosevka Nerd Font"
-                                        font.pixelSize: window.s(14)
-                                        color: groupClearMa.containsMouse ? window.red : window.overlay0
-                                        text: "󰅖"
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-                                    }
-
-                                    MouseArea {
-                                        id: groupClearMa
-                                        anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                        onClicked: window.clearGroup(section)
-                                    }
+                                    idleColor: window.overlay0
+                                    hoverColor: window.red
+                                    onClicked: window.clearGroup(section)
                                 }
                             }
                         }
@@ -471,27 +462,19 @@ Item {
                                     }
 
                                     // Individual Dismiss Button
-                                    Rectangle {
+                                    IconTogglePill {
                                         Layout.preferredWidth: window.s(22)
                                         Layout.preferredHeight: window.s(22)
+                                        theme: window
+                                        scaleFunc: window.s
+                                        icon: "󰅖"
+                                        iconSize: 12
+                                        size: 22
                                         radius: window.s(11)
-                                        color: itemClearMa.containsMouse ? Qt.alpha(window.red, 0.15) : "transparent"
-                                        Behavior on color { ColorAnimation { duration: 150 } }
-
-                                        Text {
-                                            anchors.centerIn: parent
-                                            font.family: "Iosevka Nerd Font"
-                                            font.pixelSize: window.s(12)
-                                            color: itemClearMa.containsMouse ? window.red : window.overlay0
-                                            text: "󰅖"
-                                            Behavior on color { ColorAnimation { duration: 150 } }
-                                        }
-
-                                        MouseArea {
-                                            id: itemClearMa
-                                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                            onClicked: delegateWrapper.removeThisNotif();
-                                        }
+                                        idleColor: window.overlay0
+                                        hoverColor: window.red
+                                        hoverBgColor: Qt.alpha(window.red, 0.15)
+                                        onClicked: delegateWrapper.removeThisNotif()
                                     }
                                 }
 
@@ -517,52 +500,26 @@ Item {
 
                                     Repeater {
                                         model: delegateWrapper.actionArray
-                                        delegate: Rectangle {
+                                        delegate: ActionButton {
                                             Layout.fillWidth: true
                                             Layout.preferredHeight: window.s(28)
-                                            radius: window.s(8)
 
-                                            property bool isPrimary: index === 0
+                                            theme: window
+                                            scaleFunc: window.s
+                                            label: modelData.text || "Action"
+                                            labelSize: 11
+                                            accentColor: index === 0 ? window.blue : window.overlay0
 
-                                            color: {
-                                                if (isPrimary) {
-                                                    return actionMouseArea.containsMouse ? window.blue : Qt.darker(window.blue, 1.2)
-                                                } else {
-                                                    return actionMouseArea.containsMouse ? window.surface2 : window.surface1
-                                                }
-                                            }
-
-                                            border.color: isPrimary ? window.blue : window.surface2
-                                            border.width: 1
-
-                                            Behavior on color { ColorAnimation { duration: 150 } }
-
-                                            Text {
-                                                anchors.centerIn: parent
-                                                text: modelData.text || "Action"
-                                                font.family: "JetBrains Mono"
-                                                font.weight: Font.Bold
-                                                font.pixelSize: window.s(11)
-                                                color: isPrimary ? window.crust : window.text
-                                            }
-
-                                            MouseArea {
-                                                id: actionMouseArea
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-
-                                                onClicked: {
-                                                    if (delegateWrapper.realNotif && delegateWrapper.realNotif.actions) {
-                                                        for (var i = 0; i < delegateWrapper.realNotif.actions.length; i++) {
-                                                            if (delegateWrapper.realNotif.actions[i].identifier === modelData.id) {
-                                                                delegateWrapper.realNotif.actions[i].invoke();
-                                                                break;
-                                                            }
+                                            onClicked: {
+                                                if (delegateWrapper.realNotif && delegateWrapper.realNotif.actions) {
+                                                    for (var i = 0; i < delegateWrapper.realNotif.actions.length; i++) {
+                                                        if (delegateWrapper.realNotif.actions[i].identifier === modelData.id) {
+                                                            delegateWrapper.realNotif.actions[i].invoke();
+                                                            break;
                                                         }
                                                     }
-                                                    delegateWrapper.removeThisNotif();
                                                 }
+                                                delegateWrapper.removeThisNotif();
                                             }
                                         }
                                     }

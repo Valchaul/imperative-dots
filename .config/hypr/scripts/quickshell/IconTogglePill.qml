@@ -55,6 +55,7 @@ Rectangle {
         id: pillMa
         anchors.fill: parent
         hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
         onClicked: pill.clicked()
     }
 }

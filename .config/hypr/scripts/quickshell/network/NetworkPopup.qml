@@ -930,7 +930,7 @@ Item {
             }
 
             // ── Bluetooth: power-on-at-login toggle ──────────────────────
-            HoverCard {
+            ActionButton {
                 id: btStartupToggle
                 theme: window
                 scaleFunc: window.s
@@ -942,42 +942,17 @@ Item {
                 anchors.left: parent.left
                 anchors.margins: window.s(20)
 
-                width: btStartupRow.implicitWidth + window.s(24)
                 height: window.s(38)
-                clip: true
-                hoverScale: 1.0
-                pressScale: 1.0
-                accentColor: window.activeColor
-                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
+                icon: "󰐥"
+                iconSize: 16
+                label: "On at login"
+                labelSize: 12
+                fontWeight: Font.Bold
+                accentColor: window.btStartupEnabled ? window.activeColor : window.overlay0
 
                 onClicked: {
                     window.btStartupEnabled = !window.btStartupEnabled;
                     Quickshell.execDetached(["sh", "-c", "echo '" + (window.btStartupEnabled ? "1" : "0") + "' > " + paths.getCacheDir("bluetooth") + "/on_startup"]);
-                }
-
-                Row {
-                    id: btStartupRow
-                    anchors.left: parent.left
-                    anchors.leftMargin: window.s(10)
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: window.s(8)
-
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        font.family: "Iosevka Nerd Font"
-                        font.pixelSize: window.s(16)
-                        color: window.btStartupEnabled ? window.activeColor : (btStartupToggle.containsMouse ? window.text : window.overlay0)
-                        text: "󰐥"
-                        Behavior on color { ColorAnimation { duration: 150 } }
-                    }
-                    Text {
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "On at login"
-                        font.family: "JetBrains Mono"
-                        font.weight: Font.Bold
-                        font.pixelSize: window.s(12)
-                        color: window.btStartupEnabled ? window.activeColor : window.text
-                    }
                 }
             }
 
